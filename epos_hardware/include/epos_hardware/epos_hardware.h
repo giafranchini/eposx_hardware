@@ -11,6 +11,7 @@
 #include "epos_hardware/epos.h"
 #include "epos_hardware/epos_manager.h"
 
+#include <boost/scoped_ptr.hpp>
 
 namespace epos_hardware {
 
