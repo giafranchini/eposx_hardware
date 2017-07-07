@@ -1,11 +1,11 @@
 #ifndef EPOS_HARDWARE_EPOS_H_
 #define EPOS_HARDWARE_EPOS_H_
 
-#include <ros/ros.h>
+#include "epos_hardware/utils.h"
+#include <diagnostic_updater/diagnostic_updater.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
-#include <diagnostic_updater/diagnostic_updater.h>
-#include "epos_hardware/utils.h"
+#include <ros/ros.h>
 
 namespace epos_hardware {
 
@@ -20,7 +20,6 @@ namespace epos_hardware {
 #define TARGET_REACHED (10)
 #define CURRENT_LIMIT_ACTIVE (11)
 
-
 class Epos {
 public:
   typedef enum {
@@ -29,13 +28,11 @@ public:
     CURRENT_MODE = -3
   } OperationMode;
 
-  Epos(const std::string& name,
-       ros::NodeHandle& nh, ros::NodeHandle& config_nh,
-       EposFactory* epos_factory,
-       hardware_interface::ActuatorStateInterface& asi,
-       hardware_interface::VelocityActuatorInterface& avi,
-       hardware_interface::PositionActuatorInterface& api,
-       hardware_interface::EffortActuatorInterface& aei);
+  Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config_nh,
+       EposFactory *epos_factory, hardware_interface::ActuatorStateInterface &asi,
+       hardware_interface::VelocityActuatorInterface &avi,
+       hardware_interface::PositionActuatorInterface &api,
+       hardware_interface::EffortActuatorInterface &aei);
   ~Epos();
   bool init();
   void read();
@@ -43,10 +40,11 @@ public:
   std::string name() { return name_; }
   std::string actuator_name() { return actuator_name_; }
   void update_diagnostics();
+
 private:
   ros::NodeHandle config_nh_;
   diagnostic_updater::Updater diagnostic_updater_;
-  EposFactory* epos_factory_;
+  EposFactory *epos_factory_;
   std::string name_;
   std::string actuator_name_;
   uint64_t serial_number_;
@@ -54,6 +52,7 @@ private:
   NodeHandlePtr node_handle_;
   bool valid_;
   bool has_init_;
+  bool rw_ros_units_;
 
   double position_;
   double velocity_;
@@ -69,6 +68,7 @@ private:
   double torque_constant_;
   double nominal_current_;
   double max_current_;
+  int encoder_resolution_;
 
   void buildMotorStatus(diagnostic_updater::DiagnosticStatusWrapper &stat);
   void buildMotorOutputStatus(diagnostic_updater::DiagnosticStatusWrapper &stat);
@@ -76,8 +76,6 @@ private:
   double currentToTorque(double current) { return current * torque_constant_; }
   double torqueToCurrent(double torque) { return torque / torque_constant_; }
 };
-
 }
-
 
 #endif
