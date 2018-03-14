@@ -2,18 +2,28 @@ cmake_minimum_required(VERSION 2.8.3)
 project(epos_hardware)
 
 find_package(catkin REQUIRED COMPONENTS
+  battery_state_interface
+  controller_manager
+  diagnostic_updater
   epos_library
   hardware_interface
-  transmission_interface
-  controller_manager
   roscpp
-  diagnostic_updater
+  sensor_msgs
+  transmission_interface
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES epos_library_utils epos_manager epos_hardware
-  CATKIN_DEPENDS epos_library hardware_interface roscpp controller_manager diagnostic_updater
+  CATKIN_DEPENDS 
+  battery_state_interface 
+  controller_manager 
+  diagnostic_updater 
+  epos_library 
+  hardware_interface 
+  roscpp 
+  sensor_msgs
+  transmission_interface
 )
 
 ###########
