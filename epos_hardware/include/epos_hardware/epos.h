@@ -2,10 +2,12 @@
 #define EPOS_HARDWARE_EPOS_H_
 
 #include "epos_hardware/utils.h"
+#include <battery_state_interface/battery_state_interface.hpp>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 #include <ros/ros.h>
+#include <sensor_msgs/BatteryState.h>
 
 namespace epos_hardware {
 
@@ -32,7 +34,8 @@ public:
        EposFactory *epos_factory, hardware_interface::ActuatorStateInterface &asi,
        hardware_interface::VelocityActuatorInterface &avi,
        hardware_interface::PositionActuatorInterface &api,
-       hardware_interface::EffortActuatorInterface &aei);
+       hardware_interface::EffortActuatorInterface &aei,
+       battery_state_interface::BatteryStateInterface &bsi);
   ~Epos();
   bool init();
   void read();
@@ -69,6 +72,9 @@ private:
   double nominal_current_;
   double max_current_;
   int encoder_resolution_;
+
+  std::string power_supply_name_;
+  sensor_msgs::BatteryState power_supply_state_;
 
   void buildMotorStatus(diagnostic_updater::DiagnosticStatusWrapper &stat);
   void buildMotorOutputStatus(diagnostic_updater::DiagnosticStatusWrapper &stat);

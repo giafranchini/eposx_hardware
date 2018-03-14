@@ -1,17 +1,17 @@
-#include <ros/ros.h>
-#include <ros/spinner.h>
 #include "epos_hardware/epos_hardware.h"
 #include <controller_manager/controller_manager.h>
+#include <ros/ros.h>
+#include <ros/spinner.h>
 #include <vector>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "epos_velocity_hardware");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
 
-  std::vector<std::string> motor_names;
-  for(int i = 0; i < argc-1; ++i) {
-    motor_names.push_back(argv[i+1]);
+  std::vector< std::string > motor_names;
+  for (int i = 0; i < argc - 1; ++i) {
+    motor_names.push_back(argv[i + 1]);
   }
   epos_hardware::EposHardware robot(nh, pnh, motor_names);
   controller_manager::ControllerManager cm(&robot, nh);
@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   spinner.start();
 
   ROS_INFO("Initializing Motors");
-  if(!robot.init()) {
+  if (!robot.init()) {
     ROS_FATAL("Failed to initialize motors");
     return 1;
   }
@@ -31,11 +31,10 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     robot.read();
     ros::Time now = ros::Time::now();
-    cm.update(now, now-last);
+    cm.update(now, now - last);
     robot.write();
     last = now;
     robot.update_diagnostics();
     controller_rate.sleep();
   }
-
 }

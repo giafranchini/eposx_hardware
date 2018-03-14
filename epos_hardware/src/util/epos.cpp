@@ -1,3 +1,5 @@
+#include <limits>
+
 #include "epos_hardware/epos.h"
 #include <boost/foreach.hpp>
 
@@ -7,7 +9,8 @@ Epos::Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config
            EposFactory *epos_factory, hardware_interface::ActuatorStateInterface &asi,
            hardware_interface::VelocityActuatorInterface &avi,
            hardware_interface::PositionActuatorInterface &api,
-           hardware_interface::EffortActuatorInterface &aei)
+           hardware_interface::EffortActuatorInterface &aei,
+           battery_state_interface::BatteryStateInterface &bsi)
     : name_(name), config_nh_(config_nh), diagnostic_updater_(nh, config_nh),
       epos_factory_(epos_factory), has_init_(false), position_(0), velocity_(0), effort_(0),
       current_(0), statusword_(0), position_cmd_(0), velocity_cmd_(0) {
@@ -56,6 +59,26 @@ Epos::Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config
   avi.registerHandle(velocity_handle);
   hardware_interface::ActuatorHandle effort_handle(state_handle, &torque_cmd_);
   aei.registerHandle(effort_handle);
+
+  config_nh_.getParam("power_supply/name", power_supply_name_);
+  if (!power_supply_name_.empty()) {
+    power_supply_state_.current = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_.charge = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_.capacity = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_.design_capacity = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_.percentage = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_.power_supply_status =
+        sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
+    power_supply_state_.power_supply_health =
+        sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
+    power_supply_state_.power_supply_technology =
+        sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN;
+    config_nh_.getParam("power_supply/location", power_supply_state_.location);
+    config_nh_.getParam("power_supply/serial_number", power_supply_state_.serial_number);
+    battery_state_interface::BatteryStateHandle battery_state_handle(power_supply_name_,
+                                                                     &power_supply_state_);
+    bsi.registerHandle(battery_state_handle);
+  }
 
   diagnostic_updater_.setHardwareID(serial_number_str);
   std::stringstream motor_diagnostic_name_ss;
@@ -227,7 +250,7 @@ bool Epos::init() {
             (int)(1000 * nominal_current),    // A -> mA
             (int)(1000 * max_output_current), // A -> mA
             (int)(10 * thermal_time_constant) // s -> 100ms
-            );
+        );
       }
     }
 
@@ -454,7 +477,7 @@ bool Epos::init() {
       if (position_profile_window) {
         VCS(EnablePositionWindow, window,
             (int)(1000 * time) // s -> ms
-            );
+        );
       }
     }
   }
@@ -487,7 +510,7 @@ bool Epos::init() {
       if (velocity_profile_window) {
         VCS(EnableVelocityWindow, window,
             (int)(1000 * time) // s -> ms
-            );
+        );
       }
     }
   }
@@ -544,9 +567,9 @@ void Epos::read() {
     return;
 
   unsigned int error_code;
+  unsigned int bytes_read;
 
   // Read statusword
-  unsigned int bytes_read;
   VCS_GetObject(node_handle_->device_handle->ptr, node_handle_->node_id, 0x6041, 0x00, &statusword_,
                 2, &bytes_read, &error_code);
 
@@ -573,6 +596,15 @@ void Epos::read() {
     velocity_ = velocity_raw;
     current_ = current_raw / 1000.0; // mA -> A
     effort_ = currentToTorque(current_);
+  }
+
+  // read battery status
+  if (!power_supply_name_.empty()) {
+    boost::uint16_t voltage10x(0);
+    VCS_GetObject(node_handle_->device_handle->ptr, node_handle_->node_id, 0x2200, 0x01,
+                  &voltage10x, 2, &bytes_read, &error_code);
+    power_supply_state_.voltage = voltage10x / 10.;
+    power_supply_state_.present = (voltage10x > 0);
   }
 }
 
@@ -744,4 +776,4 @@ void Epos::buildMotorOutputStatus(diagnostic_updater::DiagnosticStatusWrapper &s
     stat.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "EPOS not initialized");
   }
 }
-}
+} // namespace epos_hardware
