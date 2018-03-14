@@ -71,10 +71,11 @@ Epos::Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config
         sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
     power_supply_state_.power_supply_health =
         sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
-    power_supply_state_.power_supply_technology =
-        sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN;
-    config_nh_.getParam("power_supply/location", power_supply_state_.location);
-    config_nh_.getParam("power_supply/serial_number", power_supply_state_.serial_number);
+    power_supply_state_.power_supply_technology = config_nh_.param< int >(
+        "power_supply/technology", sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN);
+    power_supply_state_.location = config_nh_.param< std::string >("power_supply/location", "");
+    power_supply_state_.serial_number =
+        config_nh_.param< std::string >("power_supply/serial_number", "");
     battery_state_interface::BatteryStateHandle battery_state_handle(power_supply_name_,
                                                                      &power_supply_state_);
     bsi.registerHandle(battery_state_handle);
