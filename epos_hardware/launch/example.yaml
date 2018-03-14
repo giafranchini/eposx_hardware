@@ -15,6 +15,11 @@ my_joint_actuator:
       thermal_time_constant: 2.11
       number_of_pole_pairs: 2
 
+  power_supply:
+    name: 'battery'
+    location: 'battery_slot'
+    technology: 3 # LIPO (corresponds sensor_msgs::BatteryState::power_supply_technology)
+
   sensor:
     type: 1
     incremental_encoder:
