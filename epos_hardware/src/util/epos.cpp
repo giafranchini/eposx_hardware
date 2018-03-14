@@ -1,6 +1,8 @@
 #include <limits>
 
 #include "epos_hardware/epos.h"
+
+#include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
 
 namespace epos_hardware {
