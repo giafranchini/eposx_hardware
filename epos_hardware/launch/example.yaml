@@ -1,11 +1,13 @@
 # Time in seconds
 # Current in amps
-# position, velocity, and acceleration in device units
+# position, velocity, and acceleration
+# in device units if rw_ros_units is false (default), or in ros units if true
 my_joint_actuator:
   actuator_name: 'test_joint_actuator'
   serial_number: '662080000026'
   operation_mode: 'profile_velocity'
   clear_faults: true
+  rw_ros_units: true
 
   motor:
     type: 10
@@ -15,8 +17,8 @@ my_joint_actuator:
       thermal_time_constant: 2.11
       number_of_pole_pairs: 2
 
-  power_supply:
-    name: 'battery'
+  power_supply: # optional
+    name: 'battery' # if not empty, sensor_msgs::BatteryState will be published in 'battery' topic
     location: 'battery_slot'
     technology: 3 # LIPO (corresponds sensor_msgs::BatteryState::power_supply_technology)
 
