@@ -291,7 +291,7 @@ bool Epos::init() {
     double max_speed;
     if (motor_nh.getParam("max_speed", max_speed)) {
       uint32_t data = max_speed;
-      VCS_SET_OBJECT(0x6410, 0x04, &data, 2);
+      VCS_SET_OBJECT(0x6080, 0x00, &data, 4);
     }
   }
 
