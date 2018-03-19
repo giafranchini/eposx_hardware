@@ -598,6 +598,7 @@ void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start
       unsigned int error_code;
       VCS_SetOperationMode(node_handle_->device_handle->ptr, node_handle_->node_id,
                            mode_to_switch->second, &error_code);
+      operation_mode_ = mode_to_switch->second;
     }
   }
 }
