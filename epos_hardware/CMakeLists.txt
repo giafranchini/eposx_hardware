@@ -45,42 +45,41 @@ target_link_libraries(epos_library_utils
 
 
 # Build tool to list available devices
-add_executable(list_devices src/tools/list_devices.cpp)
-target_link_libraries(list_devices
-  ${catkin_LIBRARIES}
-  epos_library_utils
-)
+#add_executable(list_devices src/tools/list_devices.cpp)
+#target_link_libraries(list_devices
+#  ${catkin_LIBRARIES}
+#  epos_library_utils
+#)
 
 # Build tool to list a devices state
-add_executable(get_state src/tools/get_state.cpp)
-target_link_libraries(get_state
-  ${catkin_LIBRARIES}
-  epos_library_utils
-)
+#add_executable(get_state src/tools/get_state.cpp)
+#target_link_libraries(get_state
+#  ${catkin_LIBRARIES}
+#  epos_library_utils
+#)
 
-add_library(epos_manager
-  src/util/epos.cpp src/util/epos_manager.cpp
-)
-target_link_libraries(epos_manager
-  ${catkin_LIBRARIES}
-  epos_library_utils
-)
+#add_library(epos_manager
+#  src/util/epos.cpp src/util/epos_manager.cpp
+#)
+#target_link_libraries(epos_manager
+#  ${catkin_LIBRARIES}
+#  epos_library_utils
+#)
 
-add_library(epos_hardware
-  src/util/epos_hardware.cpp
-)
-target_link_libraries(epos_hardware
-  ${catkin_LIBRARIES}
-  epos_manager
-  epos_library_utils
-)
+#add_library(epos_hardware
+#  src/util/epos_hardware.cpp
+#)
+#target_link_libraries(epos_hardware
+#  ${catkin_LIBRARIES}
+#  epos_manager
+#  epos_library_utils
+#)
 
-
-add_executable(epos_hardware_node src/nodes/epos_hardware_node.cpp)
-target_link_libraries(epos_hardware_node
-  ${catkin_LIBRARIES}
-  epos_hardware
-)
+#add_executable(epos_hardware_node src/nodes/epos_hardware_node.cpp)
+#target_link_libraries(epos_hardware_node
+#  ${catkin_LIBRARIES}
+#  epos_hardware
+#)
 
 #############
 ## Install ##
@@ -101,7 +100,7 @@ install(DIRECTORY launch
 )
 
 # Mark libraries and nodes for installation
-install(TARGETS epos_library_utils epos_manager epos_hardware list_devices get_state epos_hardware_node
+install(TARGETS epos_library_utils #epos_manager epos_hardware list_devices get_state epos_hardware_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
