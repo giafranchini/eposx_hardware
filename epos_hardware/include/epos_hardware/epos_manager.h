@@ -1,12 +1,17 @@
 #ifndef EPOS_HARDWARE_EPOS_MANAGER_H_
 #define EPOS_HARDWARE_EPOS_MANAGER_H_
 
+#include <list>
+#include <string>
+#include <vector>
+
 #include "epos_hardware/epos.h"
 #include "epos_hardware/utils.h"
 #include <battery_state_interface/battery_state_interface.hpp>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
+#include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/ros.h>
 #include <transmission_interface/robot_transmissions.h>
@@ -25,6 +30,8 @@ public:
   bool init();
   void read();
   void write();
+  void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
+                const std::list< hardware_interface::ControllerInfo > &stop_list);
   void update_diagnostics();
   std::vector< boost::shared_ptr< Epos > > motors() { return motors_; };
 

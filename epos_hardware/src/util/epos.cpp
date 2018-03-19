@@ -23,7 +23,7 @@ Epos::Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config
     valid_ = false;
   }
 
-  std::string serial_number_str;
+  std::string serial_number_str; // use later agian
   if (!config_nh_.getParam("serial_number", serial_number_str)) {
     ROS_ERROR("You must specify a serial number");
     valid_ = false;
@@ -31,36 +31,39 @@ Epos::Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config
     ROS_ASSERT(SerialNumberFromHex(serial_number_str, &serial_number_));
   }
 
-  std::string operation_mode_str;
-  if (!config_nh_.getParam("operation_mode", operation_mode_str)) {
-    ROS_ERROR("You must specify an operation mode");
-    valid_ = false;
-  } else {
-    if (operation_mode_str == "profile_position") {
-      operation_mode_ = PROFILE_POSITION_MODE;
-    } else if (operation_mode_str == "profile_velocity") {
-      operation_mode_ = PROFILE_VELOCITY_MODE;
-    } else if (operation_mode_str == "current") {
-      operation_mode_ = CURRENT_MODE;
-    } else {
-      ROS_ERROR_STREAM(operation_mode_str << " is not a valid operation mode");
-      valid_ = false;
+  {
+    std::map< std::string, std::string > str_map;
+    if (config_nh_.getParam("operation_mode_map", str_map)) {
+      for (std::map< std::string, std::string >::const_iterator str_pair = str_map.begin();
+           str_pair != str_map.end(); ++str_pair) {
+        if (str_pair->second == "profile_position") {
+          operation_mode_map_[str_pair->first] = PROFILE_POSITION_MODE;
+        } else if (str_pair->second == "profile_velocity") {
+          operation_mode_map_[str_pair->first] = PROFILE_VELOCITY_MODE;
+        } else if (str_pair->second == "current") {
+          operation_mode_map_[str_pair->first] = CURRENT_MODE;
+        } else {
+          ROS_ERROR_STREAM(str_pair->second << " is not a valid operation mode");
+          valid_ = false;
+        }
+      }
     }
   }
 
   config_nh_.param("rw_ros_units", rw_ros_units_, false);
 
   ROS_INFO_STREAM(actuator_name_);
-  hardware_interface::ActuatorStateHandle state_handle(actuator_name_, &position_, &velocity_,
-                                                       &effort_);
-  asi.registerHandle(state_handle);
-
-  hardware_interface::ActuatorHandle position_handle(state_handle, &position_cmd_);
-  api.registerHandle(position_handle);
-  hardware_interface::ActuatorHandle velocity_handle(state_handle, &velocity_cmd_);
-  avi.registerHandle(velocity_handle);
-  hardware_interface::ActuatorHandle effort_handle(state_handle, &torque_cmd_);
-  aei.registerHandle(effort_handle);
+  {
+    hardware_interface::ActuatorStateHandle state_handle(actuator_name_, &position_, &velocity_,
+                                                         &effort_);
+    asi.registerHandle(state_handle);
+    hardware_interface::ActuatorHandle position_handle(state_handle, &position_cmd_);
+    api.registerHandle(position_handle);
+    hardware_interface::ActuatorHandle velocity_handle(state_handle, &velocity_cmd_);
+    avi.registerHandle(velocity_handle);
+    hardware_interface::ActuatorHandle effort_handle(state_handle, &torque_cmd_);
+    aei.registerHandle(effort_handle);
+  }
 
   config_nh_.getParam("power_supply/name", power_supply_name_);
   if (!power_supply_name_.empty()) {
@@ -90,16 +93,20 @@ Epos::Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config
   }
 
   diagnostic_updater_.setHardwareID(serial_number_str);
-  std::stringstream motor_diagnostic_name_ss;
-  motor_diagnostic_name_ss << name << ": "
-                           << "Motor";
-  diagnostic_updater_.add(motor_diagnostic_name_ss.str(),
-                          boost::bind(&Epos::buildMotorStatus, this, _1));
-  std::stringstream motor_output_diagnostic_name_ss;
-  motor_output_diagnostic_name_ss << name << ": "
-                                  << "Motor Output";
-  diagnostic_updater_.add(motor_output_diagnostic_name_ss.str(),
-                          boost::bind(&Epos::buildMotorOutputStatus, this, _1));
+  {
+    std::stringstream motor_diagnostic_name_ss;
+    motor_diagnostic_name_ss << name << ": "
+                             << "Motor";
+    diagnostic_updater_.add(motor_diagnostic_name_ss.str(),
+                            boost::bind(&Epos::buildMotorStatus, this, _1));
+  }
+  {
+    std::stringstream motor_output_diagnostic_name_ss;
+    motor_output_diagnostic_name_ss << name << ": "
+                                    << "Motor Output";
+    diagnostic_updater_.add(motor_output_diagnostic_name_ss.str(),
+                            boost::bind(&Epos::buildMotorOutputStatus, this, _1));
+  }
 }
 
 Epos::~Epos() {
@@ -203,7 +210,15 @@ bool Epos::init() {
     return false;
   }
 
-  VCS(SetOperationMode, operation_mode_);
+  {
+    const std::map< std::string, OperationMode >::const_iterator initial_mode(
+        operation_mode_map_.find(""));
+    if (initial_mode != operation_mode_map_.end()) {
+      VCS(SetOperationMode, initial_mode->second);
+    } else {
+      ROS_WARN("No initial operation mode");
+    }
+  }
 
   std::string fault_reaction_str;
 #define SET_FAULT_REACTION_OPTION(val)                                                             \
@@ -571,6 +586,22 @@ bool Epos::init() {
   return true;
 }
 
+void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
+                    const std::list< hardware_interface::ControllerInfo > &stop_list) {
+  // switch epos's operation mode according to starting controllers
+  for (std::list< hardware_interface::ControllerInfo >::const_iterator starting_controller =
+           start_list.begin();
+       starting_controller != start_list.end(); ++starting_controller) {
+    const std::map< std::string, OperationMode >::const_iterator mode_to_switch(
+        operation_mode_map_.find(starting_controller->name));
+    if (mode_to_switch != operation_mode_map_.end()) {
+      unsigned int error_code;
+      VCS_SetOperationMode(node_handle_->device_handle->ptr, node_handle_->node_id,
+                           mode_to_switch->second, &error_code);
+    }
+  }
+}
+
 void Epos::read() {
   if (!has_init_)
     return;
@@ -673,6 +704,18 @@ void Epos::write() {
 }
 
 void Epos::update_diagnostics() { diagnostic_updater_.update(); }
+
+#define STATUSWORD(b, v) ((v >> b) & 1)
+#define READY_TO_SWITCH_ON (0)
+#define SWITCHED_ON (1)
+#define ENABLE (2)
+#define FAULT (3)
+#define VOLTAGE_ENABLED (4)
+#define QUICKSTOP (5)
+#define WARNING (7)
+#define TARGET_REACHED (10)
+#define CURRENT_LIMIT_ACTIVE (11)
+
 void Epos::buildMotorStatus(diagnostic_updater::DiagnosticStatusWrapper &stat) {
   stat.add("Actuator Name", actuator_name_);
   unsigned int error_code;

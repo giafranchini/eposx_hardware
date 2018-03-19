@@ -30,8 +30,11 @@ bool EposManager::init() {
   return success;
 }
 
-void EposManager::update_diagnostics() {
-  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->update_diagnostics(); }
+void EposManager::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
+                           const std::list< hardware_interface::ControllerInfo > &stop_list) {
+  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) {
+    motor->doSwitch(start_list, stop_list);
+  }
 }
 
 void EposManager::read() {
@@ -40,6 +43,10 @@ void EposManager::read() {
 
 void EposManager::write() {
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->write(); }
+}
+
+void EposManager::update_diagnostics() {
+  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->update_diagnostics(); }
 }
 
 } // namespace epos_hardware

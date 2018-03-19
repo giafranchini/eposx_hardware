@@ -77,7 +77,10 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
 
 bool EposHardware::init() { return epos_manager_.init(); }
 
-void EposHardware::update_diagnostics() { epos_manager_.update_diagnostics(); }
+void EposHardware::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
+                            const std::list< hardware_interface::ControllerInfo > &stop_list) {
+  epos_manager_.doSwitch(start_list, stop_list);
+}
 
 void EposHardware::read() {
   epos_manager_.read();
@@ -97,5 +100,7 @@ void EposHardware::write() {
         ->propagate();
   epos_manager_.write();
 }
+
+void EposHardware::update_diagnostics() { epos_manager_.update_diagnostics(); }
 
 } // namespace epos_hardware
