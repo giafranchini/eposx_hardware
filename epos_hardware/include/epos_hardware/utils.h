@@ -151,21 +151,21 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
 
 // call a VCS_xxx function in a if statement
 #define IF_VCS(func, ...)                                                                          \
-  if (VCS_##func(__VA_ARGS__, &epos_hardware::EposException::error_code) != VCS_FALSE)
+  if (VCS_##func(__VA_ARGS__, &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_xxx function or die
 #define VCS(func, ...)                                                                             \
   do {                                                                                             \
     unsigned int error_code;                                                                       \
     if (VCS_##func(__VA_ARGS__, &error_code) == VCS_FALSE) {                                       \
-      throw EposException(#func, error_code);                                                      \
+      throw ::epos_hardware::EposException(#func, error_code);                                     \
     }                                                                                              \
   } while (false)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr in a if statement (no more arguments)
 #define IF_VCS_N0(func, epos_node_handle)                                                          \
   if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id,                             \
-                 &epos_hardware::EposException::error_code) != VCS_FALSE)
+                 &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr or die (no more arguments)
 #define VCS_N0(func, epos_node_handle)                                                             \
@@ -173,14 +173,14 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     unsigned int error_code;                                                                       \
     if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, &error_code) ==           \
         VCS_FALSE) {                                                                               \
-      throw EposException(#func, error_code);                                                      \
+      throw ::epos_hardware::EposException(#func, error_code);                                     \
     }                                                                                              \
   } while (false)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr in a if statement
 #define IF_VCS_NN(func, epos_node_handle, ...)                                                     \
   if (VCS_##func(epos_node_handle.ptr(), epos_node_handle.node_id, __VA_ARGS__,                    \
-                 &epos_hardware::EposException::error_code) != VCS_FALSE)
+                 &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr or die
 #define VCS_NN(func, epos_node_handle, ...)                                                        \
@@ -188,15 +188,15 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     unsigned int error_code;                                                                       \
     if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, __VA_ARGS__,              \
                    &error_code) == VCS_FALSE) {                                                    \
-      throw EposException(#func, error_code);                                                      \
+      throw ::epos_hardware::EposException(#func, error_code);                                     \
     }                                                                                              \
   } while (false)
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandlePtr in a if statement
 #define IF_VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                          \
   if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,      \
-                 length, &epos_hardware::EposException::bytes_transferred,                         \
-                 &epos_hardware::EposException::error_code) != VCS_FALSE)
+                 length, &::epos_hardware::EposException::bytes_transferred,                       \
+                 &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandlePtr or die
 #define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \
@@ -205,7 +205,7 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     unsigned int error_code;                                                                       \
     if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,    \
                    length, &bytes_transferred, &error_code) == VCS_FALSE) {                        \
-      throw EposException(#func, error_code);                                                      \
+      throw ::epos_hardware::EposException(#func, error_code);                                     \
     }                                                                                              \
   } while (false)
 
