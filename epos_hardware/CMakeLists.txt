@@ -45,11 +45,11 @@ target_link_libraries(epos_library_utils
 
 
 # Build tool to list available devices
-#add_executable(list_devices src/tools/list_devices.cpp)
-#target_link_libraries(list_devices
-#  ${catkin_LIBRARIES}
-#  epos_library_utils
-#)
+add_executable(list_devices src/tools/list_devices.cpp)
+target_link_libraries(list_devices
+  ${catkin_LIBRARIES}
+  epos_library_utils
+)
 
 # Build tool to list a devices state
 #add_executable(get_state src/tools/get_state.cpp)
