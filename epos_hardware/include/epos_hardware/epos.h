@@ -5,9 +5,9 @@
 #include <map>
 #include <string>
 
-#include "epos_hardware/utils.h"
 #include <battery_state_interface/battery_state_interface.hpp>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include <epos_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 #include <hardware_interface/controller_info.h>
@@ -25,7 +25,7 @@ public:
   } OperationMode;
 
   Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config_nh,
-       EposFactory *epos_factory, hardware_interface::ActuatorStateInterface &asi,
+       hardware_interface::ActuatorStateInterface &asi,
        hardware_interface::VelocityActuatorInterface &avi,
        hardware_interface::PositionActuatorInterface &api,
        hardware_interface::EffortActuatorInterface &aei,
@@ -50,13 +50,12 @@ private:
 private:
   ros::NodeHandle config_nh_;
   diagnostic_updater::Updater diagnostic_updater_;
-  EposFactory *epos_factory_;
   std::string name_;
   std::string actuator_name_;
   uint64_t serial_number_;
   std::map< std::string, OperationMode > operation_mode_map_;
   OperationMode operation_mode_;
-  NodeHandlePtr node_handle_;
+  epos_hardware::NodeHandle node_handle_;
   bool valid_;
   bool has_init_;
   bool rw_ros_units_;

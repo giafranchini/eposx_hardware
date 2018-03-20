@@ -1,4 +1,5 @@
-#include "epos_hardware/epos_manager.h"
+#include <epos_hardware/epos_manager.h>
+
 #include <boost/foreach.hpp>
 
 namespace epos_hardware {
@@ -13,8 +14,8 @@ EposManager::EposManager(hardware_interface::ActuatorStateInterface &asi,
   BOOST_FOREACH (const std::string &motor_name, motor_names) {
     ROS_INFO_STREAM("Loading EPOS: " << motor_name);
     ros::NodeHandle motor_config_nh(pnh, motor_name);
-    boost::shared_ptr< Epos > motor(new Epos(motor_name, nh, motor_config_nh, &epos_factory, *asi_,
-                                             *avi_, *api_, *aei_, *bsi_));
+    boost::shared_ptr< Epos > motor(
+        new Epos(motor_name, nh, motor_config_nh, *asi_, *avi_, *api_, *aei_, *bsi_));
     motors_.push_back(motor);
   }
 }

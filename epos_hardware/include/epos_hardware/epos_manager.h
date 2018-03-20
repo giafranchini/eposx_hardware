@@ -37,7 +37,6 @@ public:
 
 private:
   std::vector< boost::shared_ptr< Epos > > motors_;
-  EposFactory epos_factory;
 
   hardware_interface::ActuatorStateInterface *asi_;
   hardware_interface::VelocityActuatorInterface *avi_;
