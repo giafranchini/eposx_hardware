@@ -285,7 +285,7 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
       return NodeHandle(node_info);
     }
   }
-  return NodeHandle();
+  throw EposException("createNodeHandle (No node found with serial number)");
 }
 
 } // namespace epos_hardware
