@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <vector>
 
 #include <battery_state_interface/battery_state_interface.hpp>
 #include <diagnostic_updater/diagnostic_updater.h>
@@ -60,12 +61,15 @@ private:
   bool has_init_;
   bool rw_ros_units_;
 
+  // epos -> ros
   double position_;
   double velocity_;
   double effort_;
   double current_;
-  uint16_t statusword_;
+  boost::uint16_t statusword_;
+  std::vector< unsigned int > device_errors_;
 
+  // ros -> epos
   double position_cmd_;
   double velocity_cmd_;
   double torque_cmd_;

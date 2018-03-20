@@ -59,7 +59,7 @@ target_link_libraries(get_state
 )
 
 add_library(epos_manager
-#  src/util/epos.cpp
+  src/util/epos.cpp
   src/util/epos_manager.cpp
 )
 target_link_libraries(epos_manager
