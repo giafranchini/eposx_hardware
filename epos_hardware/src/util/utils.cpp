@@ -7,6 +7,8 @@
 #include <boost/foreach.hpp>
 #include <boost/weak_ptr.hpp>
 
+#include <ros/console.h>
+
 namespace epos_hardware {
 
 //
@@ -36,25 +38,106 @@ std::string EposException::toErrorInfo(const unsigned int error_code) {
   return oss.str();
 }
 
+unsigned int EposException::error_code(0);
+unsigned int EposException::bytes_transferred(0);
+
+//
+// DeviceInfo
+//
+
+DeviceInfo::DeviceInfo() : device_name(), protocol_stack_name(), interface_name(), port_name() {}
+
+DeviceInfo::DeviceInfo(const std::string &device_name, const std::string &protocol_stack_name,
+                       const std::string &interface_name, const std::string &port_name)
+    : device_name(device_name), protocol_stack_name(protocol_stack_name),
+      interface_name(interface_name), port_name(port_name) {}
+
+DeviceInfo::~DeviceInfo() {}
+
+struct CompareDeviceInfo {
+  bool operator()(const DeviceInfo &a, const DeviceInfo &b) const {
+    if (a.device_name != b.device_name) {
+      return a.device_name < b.device_name;
+    }
+    if (a.protocol_stack_name != b.protocol_stack_name) {
+      return a.protocol_stack_name < b.protocol_stack_name;
+    }
+    if (a.interface_name != b.interface_name) {
+      return a.interface_name < b.interface_name;
+    }
+    return a.port_name < b.port_name;
+  }
+};
+
 //
 // DeviceHandle
 //
 
-DeviceHandle::DeviceHandle(void *ptr) : ptr(ptr) {}
+DeviceHandle::DeviceHandle() : ptr() {}
 
-DeviceHandle::~DeviceHandle() {
+DeviceHandle::DeviceHandle(const DeviceInfo &device_info) : ptr(makePtr(device_info)) {}
+
+DeviceHandle::~DeviceHandle() {}
+
+// global storage of opened devices
+std::map< DeviceInfo, boost::weak_ptr< void >, CompareDeviceInfo > existing_device_ptrs;
+
+boost::shared_ptr< void > DeviceHandle::makePtr(const DeviceInfo &device_info) {
+  // try find an existing device
+  const boost::shared_ptr< void > existing_device_ptr = existing_device_ptrs[device_info].lock();
+  if (existing_device_ptr) {
+    return existing_device_ptr;
+  }
+  // open new device if not exists
+  const boost::shared_ptr< void > new_device_ptr(/*raw ptr*/ openDevice(device_info),
+                                                 /*deleter*/ closeDevice);
+  existing_device_ptrs[device_info] = new_device_ptr;
+  return new_device_ptr;
+}
+
+void *DeviceHandle::openDevice(const DeviceInfo &device_info) {
+  unsigned int error_code;
+  void *const raw_ptr(VCS_OpenDevice(const_cast< char * >(device_info.device_name.c_str()),
+                                     const_cast< char * >(device_info.protocol_stack_name.c_str()),
+                                     const_cast< char * >(device_info.interface_name.c_str()),
+                                     const_cast< char * >(device_info.port_name.c_str()),
+                                     &error_code));
+  if (!raw_ptr) {
+    throw EposException("OpenDevice", error_code);
+  }
+  return raw_ptr;
+}
+
+void DeviceHandle::closeDevice(void *ptr) {
   unsigned int error_code;
   if (VCS_CloseDevice(ptr, &error_code) == VCS_FALSE) {
-    throw EposException("CloseDevice", error_code);
+    // deleter of shared_ptr must not throw
+    ROS_ERROR_STREAM("CloseDevice (" + EposException::toErrorInfo(error_code) + ")");
   }
 }
+
+//
+// NodeInfo
+//
+
+NodeInfo::NodeInfo() : DeviceInfo(), node_id(0) {}
+
+NodeInfo::NodeInfo(const DeviceInfo &device_info, const unsigned short node_id)
+    : DeviceInfo(device_info), node_id(node_id) {}
+
+NodeInfo::~NodeInfo() {}
 
 //
 // NodeHandle
 //
 
-NodeHandle::NodeHandle(DeviceHandlePtr device_handle, unsigned short node_id)
-    : device_handle(device_handle), node_id(node_id) {}
+NodeHandle::NodeHandle() : DeviceHandle(), node_id(0) {}
+
+NodeHandle::NodeHandle(const NodeInfo &node_info)
+    : DeviceHandle(node_info), node_id(node_info.node_id) {}
+
+NodeHandle::NodeHandle(const DeviceHandle &device_handle, unsigned short node_id)
+    : DeviceHandle(device_handle), node_id(node_id) {}
 
 NodeHandle::~NodeHandle() {}
 
@@ -147,107 +230,62 @@ std::vector< unsigned int > getBaudrateList(const std::string &device_name,
   return baudrates;
 }
 
-std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
-                                       const std::string &protocol_stack_name,
-                                       const std::string &interface_name,
-                                       const std::string &port_name) {
-  std::vector< NodeInfo > node_infos;
-
-  // get the device
-  DeviceHandlePtr device_handle(
-      createDeviceHandle(device_name, protocol_stack_name, interface_name, port_name));
-  if (!device_handle) {
-    return node_infos;
+std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
+                                           const std::string &protocol_stack_name,
+                                           const std::string &interface_name) {
+  std::vector< DeviceInfo > device_infos;
+  const std::vector< std::string > port_names(
+      getPortNameList(device_name, protocol_stack_name, interface_name));
+  BOOST_FOREACH (const std::string &port_name, port_names) {
+    device_infos.push_back(DeviceInfo(device_name, protocol_stack_name, interface_name, port_name));
   }
-
-  // try access all possible nodes on the device
-  NodeInfo node_info;
-  node_info.device_name = device_name;
-  node_info.protocol_stack_name = protocol_stack_name;
-  node_info.interface_name = interface_name;
-  node_info.port_name = port_name;
-  for (unsigned short i = 1; i < 127; ++i) {
-    try {
-      VCS(GetVersion, device_handle->ptr, i, &node_info.hardware_version,
-          &node_info.software_version, &node_info.application_number,
-          &node_info.application_version);
-      // TODO: change index based on protocol_stack_name("epos2" or "epos4")
-      unsigned int bytes_read;
-      VCS(GetObject, device_handle->ptr, i, 0x2100, 0x01, &node_info.serial_number, 8, &bytes_read);
-    } catch (const EposException &) {
-      // node does not exist
-      continue;
-    }
-    node_info.node_id = i;
-    node_infos.push_back(node_info);
-  }
-  return node_infos;
+  return device_infos;
 }
 
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
                                        const std::string &interface_name) {
   std::vector< NodeInfo > node_infos;
-  const std::vector< std::string > port_names(
-      getPortNameList(device_name, protocol_stack_name, interface_name));
-  BOOST_FOREACH (const std::string &port_name, port_names) {
-    const std::vector< NodeInfo > this_node_infos(
-        enumerateNodes(device_name, protocol_stack_name, interface_name, port_name));
+  const std::vector< DeviceInfo > device_infos(
+      enumerateDevices(device_name, protocol_stack_name, interface_name));
+  BOOST_FOREACH (const DeviceInfo &device_info, device_infos) {
+    const std::vector< NodeInfo > this_node_infos(enumerateNodes(device_info));
     node_infos.insert(node_infos.end(), this_node_infos.begin(), this_node_infos.end());
   }
   return node_infos;
 }
 
-//
-// factory functions
-//
-
-// global storage of opened devices
-std::map< std::string, boost::weak_ptr< DeviceHandle > > existing_device_handles;
-
-DeviceHandlePtr createDeviceHandle(const std::string &device_name,
-                                   const std::string &protocol_stack_name,
-                                   const std::string &interface_name,
-                                   const std::string &port_name) {
-  const std::string key(device_name + '/' + protocol_stack_name + '/' + interface_name + '/' +
-                        port_name);
-  DeviceHandlePtr device_handle(existing_device_handles[key].lock());
-  if (!device_handle) {
-    unsigned int error_code;
-    void *raw_handle(VCS_OpenDevice(const_cast< char * >(device_name.c_str()),
-                                    const_cast< char * >(protocol_stack_name.c_str()),
-                                    const_cast< char * >(interface_name.c_str()),
-                                    const_cast< char * >(port_name.c_str()), &error_code));
-    if (!raw_handle) {
-      throw EposException("OpenDevice", error_code);
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info) {
+  // try access all possible nodes on the device
+  std::vector< NodeInfo > node_infos;
+  for (unsigned short node_id = 1; node_id < 127; ++node_id) {
+    try {
+      NodeInfo node_info(device_info, node_id);
+      NodeHandle node_handle(node_info);
+      VCS_NN(GetVersion, node_handle, &node_info.hardware_version, &node_info.software_version,
+             &node_info.application_number, &node_info.application_version);
+      // TODO: change index based on protocol_stack_name("epos2" or "epos4")
+      VCS_OBJ(GetObject, node_handle, 0x2100, 0x01, &node_info.serial_number, 8);
+      node_infos.push_back(node_info);
+    } catch (const EposException &) {
+      // node does not exist
+      continue;
     }
-    device_handle.reset(new DeviceHandle(raw_handle));
-    existing_device_handles[key] = device_handle;
   }
-  return device_handle;
+  return node_infos;
 }
 
-NodeHandlePtr createNodeHandle(const std::string &device_name,
-                               const std::string &protocol_stack_name,
-                               const std::string &interface_name,
-                               const boost::uint64_t serial_number) {
+NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
+                            const std::string &interface_name,
+                            const boost::uint64_t serial_number) {
   const std::vector< NodeInfo > node_infos(
       enumerateNodes(device_name, protocol_stack_name, interface_name));
   BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
     if (node_info.serial_number == serial_number) {
-      return createNodeHandle(node_info);
+      return NodeHandle(node_info);
     }
   }
-  return NodeHandlePtr();
+  return NodeHandle();
 }
 
-NodeHandlePtr createNodeHandle(const NodeInfo &node_info) {
-  DeviceHandlePtr device_handle(createDeviceHandle(node_info.device_name,
-                                                   node_info.protocol_stack_name,
-                                                   node_info.interface_name, node_info.port_name));
-  if (!device_handle) {
-    return NodeHandlePtr();
-  }
-  return NodeHandlePtr(new NodeHandle(device_handle, node_info.node_id));
-}
 } // namespace epos_hardware

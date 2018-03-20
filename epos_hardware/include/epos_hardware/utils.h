@@ -24,7 +24,7 @@ public:
 
   bool hasErrorCode() const;
   unsigned int getErrorCode() const;
-  
+
   static std::string toErrorInfo(const unsigned int error_code);
 
 public:
@@ -37,49 +37,74 @@ private:
 };
 
 //
-// handle of node chain which finalizes itself on destruction
+// information of device (node chain)
+//
+
+class DeviceInfo {
+public:
+  DeviceInfo();
+  DeviceInfo(const std::string &device_name, const std::string &protocol_stack_name,
+             const std::string &interface_name, const std::string &port_name);
+  virtual ~DeviceInfo();
+
+public:
+  std::string device_name;
+  std::string protocol_stack_name;
+  std::string interface_name;
+  std::string port_name;
+};
+
+//
+// handle of device (node chain) which finalizes itself on destruction
 //
 
 class DeviceHandle {
 public:
-  DeviceHandle(void *ptr);
+  DeviceHandle();
+  DeviceHandle(const DeviceInfo &device_info);
   virtual ~DeviceHandle();
 
+private:
+  static boost::shared_ptr< void > makePtr(const DeviceInfo &device_info);
+  static void *openDevice(const DeviceInfo &device_info);
+  static void closeDevice(void *ptr);
+
 public:
-  void *const ptr;
+  boost::shared_ptr< void > ptr;
 };
-typedef boost::shared_ptr< DeviceHandle > DeviceHandlePtr;
+
+//
+// information of node
+//
+
+class NodeInfo : public DeviceInfo {
+public:
+  NodeInfo();
+  NodeInfo(const DeviceInfo &device_info, const unsigned short node_id);
+  virtual ~NodeInfo();
+
+public:
+  unsigned short node_id;
+  boost::uint64_t serial_number;
+  unsigned short hardware_version;
+  unsigned short software_version;
+  unsigned short application_number;
+  unsigned short application_version;
+};
 
 //
 // handle of node
 //
 
-class NodeHandle {
+class NodeHandle : public DeviceHandle {
 public:
-  NodeHandle(DeviceHandlePtr device_handle, unsigned short node_id);
+  NodeHandle();
+  NodeHandle(const NodeInfo &node_info);
+  NodeHandle(const DeviceHandle &device_handle, unsigned short node_id);
   virtual ~NodeHandle();
 
 public:
-  const DeviceHandlePtr device_handle;
-  const unsigned short node_id;
-};
-typedef boost::shared_ptr< NodeHandle > NodeHandlePtr;
-
-//
-// node info
-//
-
-struct NodeInfo {
-  std::string device_name;
-  std::string protocol_stack_name;
-  std::string interface_name;
-  std::string port_name;
   unsigned short node_id;
-  uint64_t serial_number;
-  unsigned short hardware_version;
-  unsigned short software_version;
-  unsigned short application_number;
-  unsigned short application_version;
 };
 
 //
@@ -102,29 +127,19 @@ std::vector< unsigned int > getBaudrateList(const std::string &device_name,
                                             const std::string &interface_name,
                                             const std::string &port_name);
 
-std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
-                                       const std::string &protocol_stack_name,
-                                       const std::string &interface_name,
-                                       const std::string &port_name);
+std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
+                                           const std::string &protocol_stack_name,
+                                           const std::string &interface_name);
 
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
                                        const std::string &interface_name);
 
-//
-// factory functions
-//
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info);
 
-DeviceHandlePtr createDeviceHandle(const std::string &device_name,
-                                   const std::string &protocol_stack_name,
-                                   const std::string &interface_name, const std::string &port_name);
+NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
+                            const std::string &interface_name, const boost::uint64_t serial_number);
 
-NodeHandlePtr createNodeHandle(const std::string &device_name,
-                               const std::string &protocol_stack_name,
-                               const std::string &interface_name,
-                               const boost::uint64_t serial_number);
-
-NodeHandlePtr createNodeHandle(const NodeInfo &node_info);
 } // namespace epos_hardware
 
 //
@@ -149,29 +164,29 @@ NodeHandlePtr createNodeHandle(const NodeInfo &node_info);
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr in a if statement (no more arguments)
 #define IF_VCS_N0(func, epos_node_handle)                                                          \
-  if (VCS_##func(epos_node_handle->defice_handle->ptr, epos_node_handle->node_id,                  \
+  if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id,                             \
                  &epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr or die (no more arguments)
 #define VCS_N0(func, epos_node_handle)                                                             \
   do {                                                                                             \
     unsigned int error_code;                                                                       \
-    if (VCS_##func(epos_node_handle->device_handle->ptr, epos_node_handle->node_id,                \
-                   &error_code) == VCS_FALSE) {                                                    \
+    if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, &error_code) ==           \
+        VCS_FALSE) {                                                                               \
       throw EposException(#func, error_code);                                                      \
     }                                                                                              \
   } while (false)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr in a if statement
 #define IF_VCS_NN(func, epos_node_handle, ...)                                                     \
-  if (VCS_##func(epos_node_handle->defice_handle->ptr, epos_node_handle->node_id, __VA_ARGS__,     \
+  if (VCS_##func(epos_node_handle.ptr(), epos_node_handle.node_id, __VA_ARGS__,                    \
                  &epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_xxx function with epos_hardware::NodeHandlePtr or die
 #define VCS_NN(func, epos_node_handle, ...)                                                        \
   do {                                                                                             \
     unsigned int error_code;                                                                       \
-    if (VCS_##func(epos_node_handle->device_handle->ptr, epos_node_handle->node_id, __VA_ARGS__,   \
+    if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, __VA_ARGS__,              \
                    &error_code) == VCS_FALSE) {                                                    \
       throw EposException(#func, error_code);                                                      \
     }                                                                                              \
@@ -179,17 +194,17 @@ NodeHandlePtr createNodeHandle(const NodeInfo &node_info);
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandlePtr in a if statement
 #define IF_VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                          \
-  if (VCS_##func(epos_node_handle->defice_handle->ptr, epos_node_handle->node_id, index, subindex, \
-                 data, length & epos_hardware::EposException::bytes_transferred,                   \
+  if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,      \
+                 length, &epos_hardware::EposException::bytes_transferred,                         \
                  &epos_hardware::EposException::error_code) != VCS_FALSE)
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandlePtr or die
 #define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \
   do {                                                                                             \
-    usngiend int bytes_transferred;                                                                \
+    unsigned int bytes_transferred;                                                                \
     unsigned int error_code;                                                                       \
-    if (VCS_##func(epos_node_handle->device_handle->ptr, epos_node_handle->node_id, index,         \
-                   subindex, data, length, bytes_transferred, &error_code) == VCS_FALSE) {         \
+    if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,    \
+                   length, &bytes_transferred, &error_code) == VCS_FALSE) {                        \
       throw EposException(#func, error_code);                                                      \
     }                                                                                              \
   } while (false)
