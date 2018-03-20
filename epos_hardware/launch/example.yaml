@@ -8,10 +8,10 @@ my_joint_actuator:
   rw_ros_units: true
 
   operation_mode_map: # map from ros_control's controller to epos's operation mode
-    - '': 'profile_velocity' # defalut operation mode
-    - 'velocity_controller': 'profile_velocity'
-    - 'position_controller': 'profile_position'
-    - 'effort_controller': 'current'
+    'default': 'profile_velocity' # defalut operation mode
+    'velocity_controller': 'profile_velocity'
+    'position_controller': 'profile_position'
+    'effort_controller': 'current'
 
   motor:
     type: 10

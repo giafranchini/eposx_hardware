@@ -212,7 +212,7 @@ bool Epos::init() {
 
   {
     const std::map< std::string, OperationMode >::const_iterator initial_mode(
-        operation_mode_map_.find(""));
+        operation_mode_map_.find("default"));
     if (initial_mode != operation_mode_map_.end()) {
       VCS(SetOperationMode, initial_mode->second);
     } else {
