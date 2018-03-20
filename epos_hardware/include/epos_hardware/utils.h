@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "epos_library/Definitions.h"
+#include <epos_library/Definitions.h>
+#include <ros/node_handle.h>
 
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
@@ -162,12 +163,12 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     }                                                                                              \
   } while (false)
 
-// call a VCS_xxx function with epos_hardware::NodeHandlePtr in a if statement (no more arguments)
+// call a VCS_xxx function with epos_hardware::NodeHandle in a if statement (no more arguments)
 #define IF_VCS_N0(func, epos_node_handle)                                                          \
   if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id,                             \
                  &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
-// call a VCS_xxx function with epos_hardware::NodeHandlePtr or die (no more arguments)
+// call a VCS_xxx function with epos_hardware::NodeHandle or die (no more arguments)
 #define VCS_N0(func, epos_node_handle)                                                             \
   do {                                                                                             \
     unsigned int error_code;                                                                       \
@@ -177,12 +178,12 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     }                                                                                              \
   } while (false)
 
-// call a VCS_xxx function with epos_hardware::NodeHandlePtr in a if statement
+// call a VCS_xxx function with epos_hardware::NodeHandle in a if statement
 #define IF_VCS_NN(func, epos_node_handle, ...)                                                     \
-  if (VCS_##func(epos_node_handle.ptr(), epos_node_handle.node_id, __VA_ARGS__,                    \
+  if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, __VA_ARGS__,                \
                  &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
-// call a VCS_xxx function with epos_hardware::NodeHandlePtr or die
+// call a VCS_xxx function with epos_hardware::NodeHandle or die
 #define VCS_NN(func, epos_node_handle, ...)                                                        \
   do {                                                                                             \
     unsigned int error_code;                                                                       \
@@ -192,13 +193,13 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     }                                                                                              \
   } while (false)
 
-// call a VCS_XxxObject function with epos_hardware::NodeHandlePtr in a if statement
+// call a VCS_XxxObject function with epos_hardware::NodeHandle in a if statement
 #define IF_VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                          \
   if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,      \
                  length, &::epos_hardware::EposException::bytes_transferred,                       \
                  &::epos_hardware::EposException::error_code) != VCS_FALSE)
 
-// call a VCS_XxxObject function with epos_hardware::NodeHandlePtr or die
+// call a VCS_XxxObject function with epos_hardware::NodeHandle or die
 #define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \
   do {                                                                                             \
     unsigned int bytes_transferred;                                                                \
@@ -208,5 +209,16 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
       throw ::epos_hardware::EposException(#func, error_code);                                     \
     }                                                                                              \
   } while (false)
+
+// get a ros param with given key and value pair or die
+#define GET_PARAM_KV(ros_node_handle, name, value)                                                 \
+  do {                                                                                             \
+    if (!ros_node_handle.getParam(name, value)) {                                                  \
+      throw EposException("ros::NodeHandle::getParam(" + ros_node_handle.resolveName(name) + ")"); \
+    }                                                                                              \
+  } while (false)
+
+// get a ros param or die, assuming the param name is same as the value name
+#define GET_PARAM_V(ros_node_handle, value) GET_PARAM_KV(ros_node_handle, #value, value)
 
 #endif
