@@ -7,7 +7,7 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
                            const std::vector< std::string > &motor_names)
     : epos_manager_(nh, pnh, motor_names, asi, avi, api, aei, bsi) {
 
-  // TODO throw exception or something
+  // TODO: move transmission initialization to init()
   try {
     transmission_loader.reset(
         new transmission_interface::TransmissionInterfaceLoader(this, &robot_transmissions));
@@ -71,7 +71,10 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
   }
 }
 
-bool EposHardware::init() { return epos_manager_.init(); }
+bool EposHardware::init() { 
+  // TODO: ask epos to register handle here
+  return epos_manager_.init(/* nh, pnh, motor_names, asi, avi, api, aei, bsi */); 
+  }
 
 void EposHardware::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                             const std::list< hardware_interface::ControllerInfo > &stop_list) {

@@ -25,6 +25,8 @@ class EposHardware : public hardware_interface::RobotHW {
 public:
   EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
                const std::vector< std::string > &motor_names);
+
+  // TODO: use common methods standardized in RobotHW
   bool init();
   virtual void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                         const std::list< hardware_interface::ControllerInfo > &stop_list);
