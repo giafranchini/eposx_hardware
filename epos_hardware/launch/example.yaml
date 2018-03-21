@@ -1,25 +1,23 @@
 # Time in seconds
 # Current in amps
 # position, velocity, and acceleration in device units
-my_joint_actuator:
-  actuator_name: 'test_joint_actuator'
+test_joint_actuator:
   serial_number: '662080000026'
   clear_faults: true
   rw_ros_units: true
 
   operation_mode_map: # map from ros_control's controller to epos's operation mode
-    - '': 'profile_velocity' # defalut operation mode
-    - 'velocity_controller': 'profile_velocity'
-    - 'position_controller': 'profile_position'
-    - 'effort_controller': 'current'
+    'default': 'profile_velocity' # defalut operation mode
+    'velocity_controller': 'profile_velocity'
+    'position_controller': 'profile_position'
+    'effort_controller': 'current'
 
   motor:
-    type: 10
-    ec_motor:
-      nominal_current: 9.650
-      max_output_current: 10.500
-      thermal_time_constant: 2.11
-      number_of_pole_pairs: 2
+    type: 10 # ec motor
+    nominal_current: 9.650
+    max_output_current: 10.500
+    thermal_time_constant: 2.11
+    number_of_pole_pairs: 2
 
   power_supply: # optional
     name: 'battery' # if not empty, sensor_msgs::BatteryState will be published in 'battery' topic
@@ -27,10 +25,9 @@ my_joint_actuator:
     technology: 3 # LIPO (corresponds sensor_msgs::BatteryState::power_supply_technology)
 
   sensor:
-    type: 1
-    incremental_encoder:
-      resolution: 500
-      inverted_polarity: false
+    type: 1 # inc encoder
+    resolution: 500
+    inverted_polarity: false
 
   safety:
     max_following_error: 20000

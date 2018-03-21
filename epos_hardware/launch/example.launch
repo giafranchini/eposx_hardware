@@ -1,6 +1,8 @@
 <launch>
+
   <param name="robot_description" textfile="$(find epos_hardware)/launch/example.urdf" />
-  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="my_joint_actuator">
+
+  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="test_joint_actuator" output="screen">
     <rosparam command="load" file="$(find epos_hardware)/launch/example.yaml" />
   </node>
 
@@ -12,4 +14,5 @@
   <param name="joint_state_controller/publish_rate" value="50" />
   <param name="velocity_controller/type" value="velocity_controllers/JointVelocityController" />
   <param name="velocity_controller/joint" value="test_joint" />
+
 </launch>
