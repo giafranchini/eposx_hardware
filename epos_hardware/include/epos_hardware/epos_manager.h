@@ -34,7 +34,7 @@ public:
   void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                 const std::list< hardware_interface::ControllerInfo > &stop_list);
   void updateDiagnostics();
-  std::vector< boost::shared_ptr< Epos > > motors() { return motors_; };
+  std::vector< std::string > motorNames() const;
 
 private:
   std::vector< boost::shared_ptr< Epos > > motors_;

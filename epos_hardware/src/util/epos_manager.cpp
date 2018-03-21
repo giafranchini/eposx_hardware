@@ -50,4 +50,12 @@ void EposManager::updateDiagnostics() {
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->updateDiagnostics(); }
 }
 
+std::vector< std::string > EposManager::motorNames() const {
+  std::vector< std::string > motor_names;
+  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) {
+    motor_names.push_back(motor->motorName());
+  }
+  return motor_names;
+}
+
 } // namespace epos_hardware

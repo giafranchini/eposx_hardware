@@ -45,11 +45,7 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
   }
 
   // build a list of all loaded actuator names
-  std::vector< std::string > actuator_names;
-  std::vector< boost::shared_ptr< Epos > > motors = epos_manager_.motors();
-  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors) {
-    actuator_names.push_back(motor->motorName());
-  }
+  const std::vector< std::string > actuator_names(epos_manager_.motorNames());
 
   // Load all transmissions that are for the loaded motors
   BOOST_FOREACH (const transmission_interface::TransmissionInfo &info, infos) {
