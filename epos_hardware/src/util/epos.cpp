@@ -54,21 +54,6 @@ Epos::~Epos() {
 //
 
 bool Epos::init() {
-  // TODO: make a subfunction loading misc parameters ??
-  if (!config_nh_.getParam("torque_constant", torque_constant_)) {
-    ROS_WARN(
-        "No torque constant specified, you can supply one using the 'torque_constant' parameter");
-    torque_constant_ = 1.0;
-  }
-  config_nh_.param("rw_ros_units", rw_ros_units_, false);
-  config_nh_.param("halt_velocity", halt_velocity_, false);
-  power_supply_state_.power_supply_technology = config_nh_.param< int >(
-      "power_supply/technology", sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN);
-  power_supply_state_.location = config_nh_.param< std::string >("power_supply/location", "");
-  power_supply_state_.serial_number =
-      config_nh_.param< std::string >("power_supply/serial_number", "");
-  //
-
   try {
     initEposNodeHandle();
     ROS_INFO_STREAM(motor_name_ << " is ready to be initialized");
@@ -88,6 +73,7 @@ bool Epos::init() {
     initVelocityProfile();
     initDeviceError();
     initDiagnostic();
+    initMiscParameters();
 
     ROS_INFO_STREAM("Enabling " << motor_name_ << " to finalize configuration");
     VCS_N0(SetEnableState, epos_handle_);
@@ -373,6 +359,33 @@ void Epos::initDiagnostic() {
                           boost::bind(&Epos::updateMotorOutputDiagnostic, this, _1));
 }
 
+void Epos::initMiscParameters() {
+  // constant whose unit is mNm/A
+  config_nh_.param("torque_constant", torque_constant_, 0.);
+  if (torque_constant_ == 0.) {
+    for (std::map< std::string, OperationMode >::const_iterator mode = operation_mode_map_.begin();
+         mode != operation_mode_map_.end(); ++mode) {
+      if (mode->second == CURRENT_MODE) {
+        throw EposException("Invalid torque_constant parameter which is required to use the "
+                            "operation mode \'current\'");
+      }
+    }
+  }
+
+  // unit of outgoing states and incomming commands
+  config_nh_.param("rw_ros_units", rw_ros_units_, false);
+
+  // halt velocity if velocity command is zero
+  config_nh_.param("halt_velocity", halt_velocity_, false);
+
+  // constants in battery state
+  power_supply_state_.power_supply_technology = config_nh_.param< int >(
+      "power_supply/technology", sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN);
+  power_supply_state_.location = config_nh_.param< std::string >("power_supply/location", "");
+  power_supply_state_.serial_number =
+      config_nh_.param< std::string >("power_supply/serial_number", "");
+}
+
 //
 // doSwitch()
 //
@@ -380,19 +393,17 @@ void Epos::initDiagnostic() {
 void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                     const std::list< hardware_interface::ControllerInfo > &stop_list) {
   // switch epos's operation mode according to starting controllers
-  for (std::list< hardware_interface::ControllerInfo >::const_iterator starting_controller =
-           start_list.begin();
-       starting_controller != start_list.end(); ++starting_controller) {
+  BOOST_FOREACH (const hardware_interface::ControllerInfo &starting_controller, start_list) {
     const std::map< std::string, OperationMode >::const_iterator mode_to_switch(
-        operation_mode_map_.find(starting_controller->name));
-    if (mode_to_switch != operation_mode_map_.end()) {
-      unsigned int error_code;
-      IF_VCS_NN(SetOperationMode, epos_handle_, mode_to_switch->second) {
-        operation_mode_ = mode_to_switch->second;
-      }
-      else {
-        ROS_ERROR_STREAM("Failed to switch mode assosicated with " << mode_to_switch->first);
-      }
+        operation_mode_map_.find(starting_controller.name));
+    if (mode_to_switch == operation_mode_map_.end()) {
+      continue;
+    }
+    IF_VCS_NN(SetOperationMode, epos_handle_, mode_to_switch->second) {
+      operation_mode_ = mode_to_switch->second;
+    }
+    else {
+      ROS_ERROR_STREAM("Failed to switch mode assosicated with " << mode_to_switch->first);
     }
   }
 }

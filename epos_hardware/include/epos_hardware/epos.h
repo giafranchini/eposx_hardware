@@ -51,6 +51,7 @@ private:
   void initVelocityProfile();
   void initDeviceError();
   void initDiagnostic();
+  void initMiscParameters();
 
   // subfunctions for read()
   void readJointState();
