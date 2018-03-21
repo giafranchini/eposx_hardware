@@ -11,13 +11,13 @@
 
 namespace epos_hardware {
 
-Epos::Epos(const std::string &motor_name, ros::NodeHandle &nh, ros::NodeHandle &config_nh,
+Epos::Epos(ros::NodeHandle &nh, ros::NodeHandle &config_nh, const std::string &motor_name,
            hardware_interface::ActuatorStateInterface &asi,
            hardware_interface::VelocityActuatorInterface &avi,
            hardware_interface::PositionActuatorInterface &api,
            hardware_interface::EffortActuatorInterface &aei,
            battery_state_interface::BatteryStateInterface &bsi)
-    : motor_name_(motor_name), config_nh_(config_nh), diagnostic_updater_(nh, config_nh),
+    : config_nh_(config_nh), motor_name_(motor_name), diagnostic_updater_(nh, config_nh),
       has_init_(false), position_(0), velocity_(0), effort_(0), current_(0), position_cmd_(0),
       velocity_cmd_(0), torque_cmd_(0) {
   // register hardware interfaces so that ros-controllers can find this hardware

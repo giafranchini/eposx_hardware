@@ -21,12 +21,13 @@ namespace epos_hardware {
 
 class EposManager {
 public:
-  EposManager(hardware_interface::ActuatorStateInterface &asi,
+  EposManager(ros::NodeHandle &nh, ros::NodeHandle &pnh,
+              const std::vector< std::string > &motor_names,
+              hardware_interface::ActuatorStateInterface &asi,
               hardware_interface::VelocityActuatorInterface &avi,
               hardware_interface::PositionActuatorInterface &api,
               hardware_interface::EffortActuatorInterface &aei,
-              battery_state_interface::BatteryStateInterface &bsi, ros::NodeHandle &nh,
-              ros::NodeHandle &pnh, const std::vector< std::string > &motor_names);
+              battery_state_interface::BatteryStateInterface &bsi);
   bool init();
   void read();
   void write();
@@ -37,12 +38,6 @@ public:
 
 private:
   std::vector< boost::shared_ptr< Epos > > motors_;
-
-  hardware_interface::ActuatorStateInterface *asi_;
-  hardware_interface::VelocityActuatorInterface *avi_;
-  hardware_interface::PositionActuatorInterface *api_;
-  hardware_interface::EffortActuatorInterface *aei_;
-  battery_state_interface::BatteryStateInterface *bsi_;
 };
 
 } // namespace epos_hardware

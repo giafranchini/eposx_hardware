@@ -5,7 +5,7 @@ namespace epos_hardware {
 
 EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
                            const std::vector< std::string > &motor_names)
-    : epos_manager_(asi, avi, api, aei, bsi, nh, pnh, motor_names) {
+    : epos_manager_(nh, pnh, motor_names, asi, avi, api, aei, bsi) {
 
   // TODO throw exception or something
   try {

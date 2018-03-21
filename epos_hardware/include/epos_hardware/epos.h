@@ -19,7 +19,7 @@ namespace epos_hardware {
 
 class Epos {
 public:
-  Epos(const std::string &motor_name, ros::NodeHandle &nh, ros::NodeHandle &config_nh,
+  Epos(ros::NodeHandle &nh, ros::NodeHandle &config_nh, const std::string &motor_name,
        hardware_interface::ActuatorStateInterface &asi,
        hardware_interface::VelocityActuatorInterface &avi,
        hardware_interface::PositionActuatorInterface &api,

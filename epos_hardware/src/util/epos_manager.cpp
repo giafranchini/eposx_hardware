@@ -4,18 +4,18 @@
 
 namespace epos_hardware {
 
-EposManager::EposManager(hardware_interface::ActuatorStateInterface &asi,
+EposManager::EposManager(ros::NodeHandle &nh, ros::NodeHandle &pnh,
+                         const std::vector< std::string > &motor_names,
+                         hardware_interface::ActuatorStateInterface &asi,
                          hardware_interface::VelocityActuatorInterface &avi,
                          hardware_interface::PositionActuatorInterface &api,
                          hardware_interface::EffortActuatorInterface &aei,
-                         battery_state_interface::BatteryStateInterface &bsi, ros::NodeHandle &nh,
-                         ros::NodeHandle &pnh, const std::vector< std::string > &motor_names)
-    : asi_(&asi), avi_(&avi), api_(&api), aei_(&aei), bsi_(&bsi) {
+                         battery_state_interface::BatteryStateInterface &bsi) {
   BOOST_FOREACH (const std::string &motor_name, motor_names) {
     ROS_INFO_STREAM("Loading EPOS: " << motor_name);
     ros::NodeHandle motor_config_nh(pnh, motor_name);
     boost::shared_ptr< Epos > motor(
-        new Epos(motor_name, nh, motor_config_nh, *asi_, *avi_, *api_, *aei_, *bsi_));
+        new Epos(nh, motor_config_nh, motor_name, asi, avi, api, aei, bsi));
     motors_.push_back(motor);
   }
 }
