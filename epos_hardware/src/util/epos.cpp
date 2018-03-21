@@ -554,7 +554,7 @@ void Epos::writeCurrentCommand() {
 // updateDiagnostics() and callbacks
 //
 
-void Epos::update_diagnostics() { diagnostic_updater_.update(); }
+void Epos::updateDiagnostics() { diagnostic_updater_.update(); }
 
 #define STATUSWORD(b, v) ((v >> b) & 1)
 #define READY_TO_SWITCH_ON (0)

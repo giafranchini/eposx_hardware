@@ -48,7 +48,7 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
   std::vector< std::string > actuator_names;
   std::vector< boost::shared_ptr< Epos > > motors = epos_manager_.motors();
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors) {
-    actuator_names.push_back(motor->actuator_name());
+    actuator_names.push_back(motor->motorName());
   }
 
   // Load all transmissions that are for the loaded motors
@@ -101,6 +101,6 @@ void EposHardware::write() {
   epos_manager_.write();
 }
 
-void EposHardware::update_diagnostics() { epos_manager_.update_diagnostics(); }
+void EposHardware::updateDiagnostics() { epos_manager_.updateDiagnostics(); }
 
 } // namespace epos_hardware

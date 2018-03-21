@@ -32,7 +32,7 @@ public:
   void write();
   void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                 const std::list< hardware_interface::ControllerInfo > &stop_list);
-  void update_diagnostics();
+  void updateDiagnostics();
   std::vector< boost::shared_ptr< Epos > > motors() { return motors_; };
 
 private:

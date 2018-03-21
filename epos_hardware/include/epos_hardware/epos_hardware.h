@@ -30,7 +30,7 @@ public:
                         const std::list< hardware_interface::ControllerInfo > &stop_list);
   void read();
   void write();
-  void update_diagnostics();
+  void updateDiagnostics();
 
 private:
   hardware_interface::ActuatorStateInterface asi;

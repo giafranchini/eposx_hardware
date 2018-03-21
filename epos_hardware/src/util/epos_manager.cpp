@@ -24,7 +24,7 @@ bool EposManager::init() {
   bool success = true;
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) {
     if (!motor->init()) {
-      ROS_ERROR_STREAM("Could not configure motor: " << motor->name());
+      ROS_ERROR_STREAM("Could not configure motor: " << motor->motorName());
       success = false;
     }
   }
@@ -46,8 +46,8 @@ void EposManager::write() {
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->write(); }
 }
 
-void EposManager::update_diagnostics() {
-  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->update_diagnostics(); }
+void EposManager::updateDiagnostics() {
+  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->updateDiagnostics(); }
 }
 
 } // namespace epos_hardware

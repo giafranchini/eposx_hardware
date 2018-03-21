@@ -32,11 +32,9 @@ public:
                 const std::list< hardware_interface::ControllerInfo > &stop_list);
   void read();
   void write();
-  void update_diagnostics(); // TODO: rename to updateDiagnostics()
+  void updateDiagnostics();
 
-  // TODO: rename to motorName()
-  std::string name() { return motor_name_; }
-  std::string actuator_name() { return motor_name_; }
+  std::string motorName() const { return motor_name_; }
 
 private:
   // subfunctions for init()
