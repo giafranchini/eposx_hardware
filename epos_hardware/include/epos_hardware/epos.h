@@ -12,76 +12,103 @@
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 #include <hardware_interface/controller_info.h>
-#include <ros/ros.h>
+#include <ros/node_handle.h>
 #include <sensor_msgs/BatteryState.h>
 
 namespace epos_hardware {
 
 class Epos {
 public:
-  typedef enum {
-    PROFILE_POSITION_MODE = 1,
-    PROFILE_VELOCITY_MODE = 3,
-    CURRENT_MODE = -3
-  } OperationMode;
-
-  Epos(const std::string &name, ros::NodeHandle &nh, ros::NodeHandle &config_nh,
+  Epos(const std::string &motor_name, ros::NodeHandle &nh, ros::NodeHandle &config_nh,
        hardware_interface::ActuatorStateInterface &asi,
        hardware_interface::VelocityActuatorInterface &avi,
        hardware_interface::PositionActuatorInterface &api,
        hardware_interface::EffortActuatorInterface &aei,
        battery_state_interface::BatteryStateInterface &bsi);
-  ~Epos();
+  virtual ~Epos();
+
   bool init();
   void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                 const std::list< hardware_interface::ControllerInfo > &stop_list);
   void read();
   void write();
-  std::string name() { return name_; }
-  std::string actuator_name() { return actuator_name_; }
-  void update_diagnostics();
+  void update_diagnostics(); // TODO: rename to updateDiagnostics()
+
+  // TODO: rename to motorName()
+  std::string name() { return motor_name_; }
+  std::string actuator_name() { return motor_name_; }
 
 private:
-  void buildMotorStatus(diagnostic_updater::DiagnosticStatusWrapper &stat);
-  void buildMotorOutputStatus(diagnostic_updater::DiagnosticStatusWrapper &stat);
+  // subfunctions for init()
+  void initEposNodeHandle();
+  void initFaultReaction();
+  void initOperationMode();
+  void initMotorParameter();
+  void initSensorParameter();
+  void initSafetyParameter();
+  void initPositionRegulator();
+  void initVelocityRegulator();
+  void initCurrentRegulator();
+  void initPositionProfile();
+  void initVelocityProfile();
+  void initDeviceError();
+  void initDiagnostic();
 
+  // subfunctions for read()
+  void readJointState();
+  void readPowerSupply();
+  void readDiagnostic();
+
+  // subfunctions for write()
+  void writePositionCommand();
+  void writeVelocityCommand();
+  void writeCurrentCommand();
+
+  // callbacks for updateDiagnostics()
+  void updateMotorDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat);
+  void updateMotorOutputDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat);
+
+  // current <-> turque conversion
   double currentToTorque(double current) { return current * torque_constant_; }
   double torqueToCurrent(double torque) { return torque / torque_constant_; }
 
 private:
+  enum OperationMode { PROFILE_POSITION_MODE = 1, PROFILE_VELOCITY_MODE = 3, CURRENT_MODE = -3 };
+
+  // TODO: describe member variables
+
+  std::string motor_name_;
   ros::NodeHandle config_nh_;
-  diagnostic_updater::Updater diagnostic_updater_;
-  std::string name_;
-  std::string actuator_name_;
-  uint64_t serial_number_;
+
+  bool has_init_;
+
+  epos_hardware::NodeHandle epos_handle_;
   std::map< std::string, OperationMode > operation_mode_map_;
   OperationMode operation_mode_;
-  epos_hardware::NodeHandle node_handle_;
-  bool valid_;
-  bool has_init_;
-  bool rw_ros_units_;
 
-  // epos -> ros
+  diagnostic_updater::Updater diagnostic_updater_;
+
+  // state: epos -> ros
   double position_;
   double velocity_;
   double effort_;
   double current_;
+  sensor_msgs::BatteryState power_supply_state_;
   boost::uint16_t statusword_;
   std::vector< unsigned int > device_errors_;
 
-  // ros -> epos
+  // command: ros -> epos
   double position_cmd_;
   double velocity_cmd_;
   double torque_cmd_;
+
+  bool rw_ros_units_;
   int max_profile_velocity_;
   bool halt_velocity_;
   double torque_constant_;
   double nominal_current_;
   double max_current_;
   int encoder_resolution_;
-
-  std::string power_supply_name_;
-  sensor_msgs::BatteryState power_supply_state_;
 };
 } // namespace epos_hardware
 
