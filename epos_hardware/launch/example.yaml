@@ -17,7 +17,7 @@ test_joint_motor:
     type: 10 # 1: DC, 10: EC sinus, 11: EC block
     nominal_current: 9.650 # [A]
     max_output_current: 10.500 # [A]
-    thermal_time_constant: 2.11 # [ms]
+    thermal_time_constant: 2.11 # thermal time constant of motor widing [s]
     number_of_pole_pairs: 2 # EC only
 
   # power supply parameters. optional
