@@ -21,7 +21,7 @@
     <joint name="test_joint">
       <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
     </joint>
-    <actuator name="test_joint_actuator">
+    <actuator name="test_joint_motor">
       <mechanicalReduction>1000</mechanicalReduction>
     </actuator>
   </transmission>

@@ -2,7 +2,7 @@
 
   <param name="robot_description" textfile="$(find epos_hardware)/launch/example.urdf" />
 
-  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="test_joint_actuator" output="screen">
+  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="test_joint_motor" output="screen">
     <rosparam command="load" file="$(find epos_hardware)/launch/example.yaml" />
   </node>
 

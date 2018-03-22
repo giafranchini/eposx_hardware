@@ -1,44 +1,51 @@
-# Time in seconds
-# Current in amps
-# position, velocity, and acceleration in device units
-test_joint_actuator:
-  serial_number: '662080000026'
-  clear_faults: true
-  rw_ros_units: true
+# motor name. should match an actuator name in a transmission interface
+test_joint_motor:
+  serial_number: '662080000026' # epos's serial number in hex ('0x' is not required)
+  clear_faults: true # clear faults recorded in epos on startup
+  rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in topics
+                     # or epos standard units (quad count of encoder pulse(qc), rpm, mNm)
 
-  operation_mode_map: # map from ros_control's controller to epos's operation mode
-    'default': 'profile_velocity' # defalut operation mode
+  # map from ros_control's controller to epos's operation mode
+  operation_mode_map: 
+    'default': 'profile_velocity' # operation mode on startup
     'velocity_controller': 'profile_velocity'
     'position_controller': 'profile_position'
     'effort_controller': 'current'
 
+  # motor parameters
   motor:
-    type: 10 # ec motor
-    nominal_current: 9.650
-    max_output_current: 10.500
-    thermal_time_constant: 2.11
-    number_of_pole_pairs: 2
+    type: 10 # 1: DC, 10: EC sinus, 11: EC block
+    nominal_current: 9.650 # [A]
+    max_output_current: 10.500 # [A]
+    thermal_time_constant: 2.11 # [ms]
+    number_of_pole_pairs: 2 # EC only
 
-  power_supply: # optional
+  # power supply parameters. optional
+  power_supply:
     name: 'battery' # if not empty, sensor_msgs::BatteryState will be published in 'battery' topic
-    location: 'battery_slot'
-    technology: 3 # LIPO (corresponds sensor_msgs::BatteryState::power_supply_technology)
+    location: 'battery_slot' # corresponds BatteryState::location
+    technology: 3 # corresponds BatteryState::power_supply_technology
+    serial_number: 'unknown' # corresponds BatteryState::serial_number
 
+  # sensor parameters
   sensor:
-    type: 1 # inc encoder
-    resolution: 500
+    type: 1 # 1: INC 3CH, 2: INC 2CH, 4: SSI ABS BIN, 5: SSI ABS GRY
+    resolution: 500 # encoder resolution
     inverted_polarity: false
 
+  # safety parameters
   safety:
-    max_following_error: 20000
-    max_profile_velocity: 12000
-    max_acceleration: 15000
+    max_following_error: 20000 # permitted error [qc] in profile_position mode
+    max_profile_velocity: 12000 # max velocity [rpm] in profile_position and profile_velocity modes
+    max_acceleration: 15000 # max acceleration [rpm/s] in profile_position nad profile_velocity modes
 
+  # profile position mode configs
   position_profile:
-    velocity: 10000
-    acceleration: 8000
-    deceleration: 9000
+    velocity: 10000 # [rpm]
+    acceleration: 8000 # [rpm/s]
+    deceleration: 9000 # [rpm/s]
 
+  # profile velocity mode configs
   velocity_profile:
-    acceleration: 8000
-    deceleration: 9000
+    acceleration: 8000 # [rpm/s]
+    deceleration: 9000 # [rpm/s]
