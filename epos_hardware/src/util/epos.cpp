@@ -622,7 +622,6 @@ void Epos::updateMotorDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &st
 }
 
 void Epos::updateMotorOutputDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat) {
-  // TODO: use correct units
   std::string operation_mode_str;
   if (operation_mode_ == PROFILE_POSITION_MODE) {
     operation_mode_str = "Profile Position Mode";
@@ -630,12 +629,15 @@ void Epos::updateMotorOutputDiagnostic(diagnostic_updater::DiagnosticStatusWrapp
              boost::lexical_cast< std::string >(position_cmd_) + " rotations");
   } else if (operation_mode_ == PROFILE_VELOCITY_MODE) {
     operation_mode_str = "Profile Velocity Mode";
-    stat.add("Commanded Velocity", boost::lexical_cast< std::string >(velocity_cmd_) + " rpm");
+    stat.add("Commanded Velocity", boost::lexical_cast< std::string >(velocity_cmd_) +
+                                       (rw_ros_units_ ? " rad/s" : " rpm"));
   } else if (operation_mode_ == CURRENT_MODE) {
     operation_mode_str = "Current Mode";
-    stat.add("Commanded Torque", boost::lexical_cast< std::string >(torque_cmd_) + " Nm");
-    stat.add("Commanded Current",
-             boost::lexical_cast< std::string >(torqueToCurrent(torque_cmd_)) + " A");
+    stat.add("Commanded Torque",
+             boost::lexical_cast< std::string >(torque_cmd_) + (rw_ros_units_ ? " Nm" : " mNm"));
+    stat.add("Commanded Current", boost::lexical_cast< std::string >(torqueToCurrent(
+                                      rw_ros_units_ ? (torque_cmd_ * 1000.) : torque_cmd_)) +
+                                      " A");
   } else {
     operation_mode_str = "Unknown Mode";
   }
@@ -645,9 +647,12 @@ void Epos::updateMotorOutputDiagnostic(diagnostic_updater::DiagnosticStatusWrapp
 
   unsigned int error_code;
   if (has_init_) {
-    stat.add("Position", boost::lexical_cast< std::string >(position_) + " rotations");
-    stat.add("Velocity", boost::lexical_cast< std::string >(velocity_) + " rpm");
-    stat.add("Torque", boost::lexical_cast< std::string >(effort_) + " Nm");
+    stat.add("Position", boost::lexical_cast< std::string >(position_) +
+                             (rw_ros_units_ ? "rad" : " quad-encoder-counts"));
+    stat.add("Velocity",
+             boost::lexical_cast< std::string >(velocity_) + (rw_ros_units_ ? "rad/s" : " rpm"));
+    stat.add("Torque",
+             boost::lexical_cast< std::string >(effort_) + (rw_ros_units_ ? " Nm" : " mNm"));
     stat.add("Current", boost::lexical_cast< std::string >(current_) + " A");
 
     stat.add< bool >("Target Reached", STATUSWORD(TARGET_REACHED, statusword_));
