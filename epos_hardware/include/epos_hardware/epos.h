@@ -67,9 +67,9 @@ private:
   void updateMotorDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat);
   void updateMotorOutputDiagnostic(diagnostic_updater::DiagnosticStatusWrapper &stat);
 
-  // current <-> turque conversion
-  double currentToTorque(double current) { return current * torque_constant_; }
-  double torqueToCurrent(double torque) { return torque / torque_constant_; }
+  // current [A] <-> turque [mNm]
+  double currentToTorque(const double current) { return current * torque_constant_; }
+  double torqueToCurrent(const double torque) { return torque / torque_constant_; }
 
 private:
   enum OperationMode { PROFILE_POSITION_MODE = 1, PROFILE_VELOCITY_MODE = 3, CURRENT_MODE = -3 };

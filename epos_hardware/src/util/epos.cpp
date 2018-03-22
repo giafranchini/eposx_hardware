@@ -553,10 +553,11 @@ void Epos::writeCurrentCommand() {
   }
   int cmd;
   if (rw_ros_units_) {
-    // Nm -> mNm
-    cmd = static_cast< int >(torqueToCurrent(torque_cmd_) * 1000.);
+    // Nm -> mNm & A -> mA
+    cmd = static_cast< int >(torqueToCurrent(torque_cmd_ * 1000.) * 1000.);
   } else {
-    cmd = static_cast< int >(torqueToCurrent(torque_cmd_));
+    // A -> mA
+    cmd = static_cast< int >(torqueToCurrent(torque_cmd_) * 1000.);
   }
   VCS_NN(SetCurrentMust, epos_handle_, cmd);
 }
