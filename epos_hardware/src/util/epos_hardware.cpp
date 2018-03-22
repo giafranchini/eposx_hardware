@@ -7,6 +7,12 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
                            const std::vector< std::string > &motor_names)
     : epos_manager_(nh, pnh, motor_names, asi, avi, api, aei, bsi) {
 
+  registerInterface(&asi);
+  registerInterface(&avi);
+  registerInterface(&api);
+  registerInterface(&aei);
+  registerInterface(&bsi);
+
   // TODO: move transmission initialization to init()
   try {
     transmission_loader.reset(
@@ -22,12 +28,6 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
     return;
   }
 
-  registerInterface(&asi);
-  registerInterface(&avi);
-  registerInterface(&api);
-  registerInterface(&aei);
-  registerInterface(&bsi);
-
   std::string urdf_string;
   nh.getParam("robot_description", urdf_string);
   while (urdf_string.empty() && ros::ok()) {
@@ -38,7 +38,6 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
 
   transmission_interface::TransmissionParser parser;
   std::vector< transmission_interface::TransmissionInfo > infos;
-  // TODO: throw exception
   if (!parser.parse(urdf_string, infos)) {
     ROS_ERROR("Error parsing URDF");
     return;
@@ -72,8 +71,7 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
 }
 
 bool EposHardware::init() { 
-  // TODO: ask epos to register handle here
-  return epos_manager_.init(/* nh, pnh, motor_names, asi, avi, api, aei, bsi */); 
+  return epos_manager_.init(); 
   }
 
 void EposHardware::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
