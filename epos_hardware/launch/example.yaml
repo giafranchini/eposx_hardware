@@ -1,6 +1,6 @@
 # motor name. should match an actuator name in a transmission interface
 test_joint_motor:
-  serial_number: '662080000026' # epos's serial number in hex ('0x' is not required)
+  serial_number: '682129000748' # epos's serial number in hex ('0x' is not required)
   clear_faults: true # clear faults recorded in epos on startup
   rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in topics
                      # or epos standard units (quad count of encoder pulse(qc), rpm, mNm)
@@ -15,16 +15,16 @@ test_joint_motor:
   # motor parameters
   motor:
     type: 10 # 1: DC, 10: EC sinus, 11: EC block
-    nominal_current: 9.650 # [A]
-    max_output_current: 10.500 # [A]
-    thermal_time_constant: 2.11 # thermal time constant of motor widing [s]
+    nominal_current: 8.0 # [A]
+    max_output_current: 10.0 # [A]
+    thermal_time_constant: 3.84 # thermal time constant of motor widing [s]
     number_of_pole_pairs: 2 # EC only
 
   # power supply parameters. optional
   power_supply:
     name: 'battery' # if not empty, sensor_msgs::BatteryState will be published in 'battery' topic
     location: 'battery_slot' # corresponds BatteryState::location
-    technology: 3 # corresponds BatteryState::power_supply_technology
+    technology: 2 # corresponds BatteryState::power_supply_technology
     serial_number: 'unknown' # corresponds BatteryState::serial_number
 
   # sensor parameters
