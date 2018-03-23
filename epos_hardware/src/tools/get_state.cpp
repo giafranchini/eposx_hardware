@@ -1,48 +1,83 @@
 #include <ios>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include <epos_hardware/utils.h>
 #include <epos_library/Definitions.h>
 
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/program_options/errors.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/value_semantic.hpp>
+#include <boost/program_options/variables_map.hpp>
 
 namespace eh = epos_hardware;
+namespace bpo = boost::program_options;
 
 int main(int argc, char *argv[]) {
-  boost::uint64_t serial_number;
-  if (argc == 2) {
-    std::stringstream ss;
-    ss << argv[1];
-    ss >> std::hex >> serial_number;
-    if (!ss) {
-      std::cerr << "Expected a serial number" << std::endl;
-      return 1;
+  std::string device_name, protocol_stack_name, interface_name, serial_number_str;
+  try {
+    // define available options
+    bpo::options_description options;
+    bool help;
+    options.add(boost::make_shared< bpo::option_description >("help", bpo::bool_switch(&help)));
+    options.add(boost::make_shared< bpo::option_description >(
+        "device", bpo::value(&device_name)->default_value("EPOS4")));
+    options.add(boost::make_shared< bpo::option_description >(
+        "protocol-stack", bpo::value(&protocol_stack_name)->default_value("MAXON SERIAL V2")));
+    options.add(boost::make_shared< bpo::option_description >(
+        "interface", bpo::value(&interface_name)->default_value("USB")));
+    options.add(boost::make_shared< bpo::option_description >("serial-number",
+                                                              bpo::value(&serial_number_str)));
+    // parse the command line
+    bpo::variables_map args;
+    bpo::store(bpo::parse_command_line(argc, argv, options), args);
+    bpo::notify(args);
+    // show help if requested
+    if (help) {
+      std::cout << "Available options:\n" << options << std::endl;
+      return 0;
     }
-  } else {
-    std::cerr << "Expected exactly one argument that is a serial number" << std::endl;
+  } catch (const bpo::error &error) {
+    std::cerr << "Error: " << error.what() << std::endl;
     return 1;
   }
 
-  std::cout << "Searching for USB EPOS4: 0x" << std::hex << serial_number << std::endl;
+  boost::uint64_t serial_number;
+  {
+    std::stringstream ss;
+    ss << serial_number_str;
+    ss >> std::hex >> serial_number;
+    if (!ss) {
+      std::cerr << "Error: Invalid serial number (" << serial_number_str << ")" << std::endl;
+      return 1;
+    }
+  }
+
+  std::cout << "Searching for " << device_name << " 0x" << std::hex << serial_number << " on "
+            << interface_name << " (" << protocol_stack_name << ")" << std::endl;
 
   try {
-    eh::NodeHandle handle(eh::createNodeHandle("EPOS4", "MAXON SERIAL V2", "USB", serial_number));
+    eh::NodeHandle epos_handle(
+        eh::createNodeHandle(device_name, protocol_stack_name, interface_name, serial_number));
 
     int position;
-    VCS_NN(GetPositionIs, handle, &position);
+    VCS_NN(GetPositionIs, epos_handle, &position);
     std::cout << "Position: " << std::dec << position << std::endl;
 
     int velocity;
-    VCS_NN(GetVelocityIs, handle, &velocity);
+    VCS_NN(GetVelocityIs, epos_handle, &velocity);
     std::cout << "Velocity: " << std::dec << velocity << std::endl;
 
     short current;
-    VCS_NN(GetCurrentIs, handle, &current);
+    VCS_NN(GetCurrentIs, epos_handle, &current);
     std::cout << "Current: " << std::dec << current << std::endl;
   } catch (const eh::EposException &error) {
-    std::cerr << error.what() << std::endl;
+    std::cerr << "Error: " << error.what() << std::endl;
     return 1;
   }
 

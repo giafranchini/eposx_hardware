@@ -12,6 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   transmission_interface
 )
 
+find_package(Boost REQUIRED COMPONENTS
+  program_options
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES epos_library_utils epos_manager epos_hardware
@@ -48,6 +52,7 @@ target_link_libraries(epos_library_utils
 add_executable(list_devices src/tools/list_devices.cpp)
 target_link_libraries(list_devices
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
   epos_library_utils
 )
 
@@ -55,6 +60,7 @@ target_link_libraries(list_devices
 add_executable(get_state src/tools/get_state.cpp)
 target_link_libraries(get_state
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
   epos_library_utils
 )
 
