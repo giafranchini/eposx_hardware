@@ -23,8 +23,9 @@ int main(int argc, char *argv[]) {
   try {
     // define available options
     bpo::options_description options;
-    bool help;
-    options.add(boost::make_shared< bpo::option_description >("help", bpo::bool_switch(&help)));
+    bool show_help;
+    options.add(
+        boost::make_shared< bpo::option_description >("help", bpo::bool_switch(&show_help)));
     options.add(boost::make_shared< bpo::option_description >(
         "device", bpo::value(&device_name)->default_value("EPOS4")));
     options.add(boost::make_shared< bpo::option_description >(
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]) {
     bpo::store(bpo::parse_command_line(argc, argv, options), args);
     bpo::notify(args);
     // show help if requested
-    if (help) {
+    if (show_help) {
       std::cout << "Available options:\n" << options << std::endl;
       return 0;
     }
@@ -47,6 +48,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  if (serial_number_str.empty()) {
+    std::cerr << "Error: no serial number specified from command line" << std::endl;
+    return 1;
+  }
   boost::uint64_t serial_number;
   {
     std::stringstream ss;
