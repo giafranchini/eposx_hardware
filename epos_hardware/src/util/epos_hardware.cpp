@@ -13,7 +13,6 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
   registerInterface(&aei);
   registerInterface(&bsi);
 
-  // TODO: move transmission initialization to init()
   try {
     transmission_loader.reset(
         new transmission_interface::TransmissionInterfaceLoader(this, &robot_transmissions));
