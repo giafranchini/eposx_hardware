@@ -15,14 +15,16 @@ namespace eh = epos_hardware;
 namespace bpo = boost::program_options;
 
 int main(int argc, char *argv[]) {
-  bool rs232;
+  bool list_rs232;
   unsigned short max_node_id;
   try {
     // define available options
     bpo::options_description options;
-    bool help;
-    options.add(boost::make_shared< bpo::option_description >("help", bpo::bool_switch(&help)));
-    options.add(boost::make_shared< bpo::option_description >("rs232", bpo::bool_switch(&rs232)));
+    bool show_help;
+    options.add(
+        boost::make_shared< bpo::option_description >("help", bpo::bool_switch(&show_help)));
+    options.add(
+        boost::make_shared< bpo::option_description >("rs232", bpo::bool_switch(&list_rs232)));
     options.add(boost::make_shared< bpo::option_description >(
         "max-node-id", bpo::value(&max_node_id)->default_value(32)));
     // parse the command line
@@ -30,7 +32,7 @@ int main(int argc, char *argv[]) {
     bpo::store(bpo::parse_command_line(argc, argv, options), args);
     bpo::notify(args);
     // show help if requested
-    if (help) {
+    if (show_help) {
       std::cout << "Available options:\n" << options << std::endl;
       return 0;
     }
@@ -39,7 +41,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::cout << "Listing Devices:" << std::endl;
+  std::cout << "Listing Nodes:" << std::endl;
 
   try {
     const std::vector< std::string > device_names(eh::getDeviceNameList());
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]) {
             eh::getInterfaceNameList(device_name, protocol_stack_name));
         BOOST_FOREACH (const std::string &interface_name, interface_names) {
           std::cout << "\t\t" << interface_name << std::endl;
-          if (!rs232 && interface_name == "RS232") {
+          if (!list_rs232 && interface_name == "RS232") {
             std::cout << "\t\t\tSkipping RS232" << std::endl;
             continue;
           }

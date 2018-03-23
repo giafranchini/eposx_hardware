@@ -48,9 +48,9 @@ target_link_libraries(epos_library_utils
 )
 
 
-# Build tool to list available devices
-add_executable(list_devices src/tools/list_devices.cpp)
-target_link_libraries(list_devices
+# Build tool to list available nodes
+add_executable(list_nodes src/tools/list_nodes.cpp)
+target_link_libraries(list_nodes
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   epos_library_utils
