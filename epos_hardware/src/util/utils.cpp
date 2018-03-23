@@ -152,7 +152,7 @@ std::vector< std::string > getDeviceNameList() {
   VCS(GetDeviceNameSelection, true /* request start of selection */, buffer, 1024,
       &end_of_selection);
   device_names.push_back(buffer);
-  while (end_of_selection != VCS_FALSE) {
+  while (end_of_selection == VCS_FALSE) {
     VCS(GetDeviceNameSelection, false /* request the next selection */, buffer, 1024,
         &end_of_selection);
     device_names.push_back(buffer);
@@ -167,7 +167,7 @@ std::vector< std::string > getProtocolStackNameList(const std::string &device_na
   VCS(GetProtocolStackNameSelection, const_cast< char * >(device_name.c_str()), true, buffer, 1024,
       &end_of_selection);
   protocol_stack_names.push_back(buffer);
-  while (end_of_selection != VCS_FALSE) {
+  while (end_of_selection == VCS_FALSE) {
     VCS(GetProtocolStackNameSelection, const_cast< char * >(device_name.c_str()), false, buffer,
         1024, &end_of_selection);
     protocol_stack_names.push_back(buffer);
@@ -183,7 +183,7 @@ std::vector< std::string > getInterfaceNameList(const std::string &device_name,
   VCS(GetInterfaceNameSelection, const_cast< char * >(device_name.c_str()),
       const_cast< char * >(protocol_stack_name.c_str()), true, buffer, 1024, &end_of_selection);
   interface_names.push_back(buffer);
-  while (end_of_selection != VCS_FALSE) {
+  while (end_of_selection == VCS_FALSE) {
     VCS(GetInterfaceNameSelection, const_cast< char * >(device_name.c_str()),
         const_cast< char * >(protocol_stack_name.c_str()), false, buffer, 1024, &end_of_selection);
     interface_names.push_back(buffer);
@@ -201,7 +201,7 @@ std::vector< std::string > getPortNameList(const std::string &device_name,
       const_cast< char * >(protocol_stack_name.c_str()),
       const_cast< char * >(interface_name.c_str()), true, buffer, 1024, &end_of_selection);
   port_names.push_back(buffer);
-  while (end_of_selection != VCS_FALSE) {
+  while (end_of_selection == VCS_FALSE) {
     VCS(GetPortNameSelection, const_cast< char * >(device_name.c_str()),
         const_cast< char * >(protocol_stack_name.c_str()),
         const_cast< char * >(interface_name.c_str()), false, buffer, 1024, &end_of_selection);
@@ -222,7 +222,7 @@ std::vector< unsigned int > getBaudrateList(const std::string &device_name,
       const_cast< char * >(interface_name.c_str()), const_cast< char * >(port_name.c_str()), true,
       &baudrate, &end_of_selection);
   baudrates.push_back(baudrate);
-  while (end_of_selection != VCS_FALSE) {
+  while (end_of_selection == VCS_FALSE) {
     VCS(GetBaudrateSelection, const_cast< char * >(device_name.c_str()),
         const_cast< char * >(protocol_stack_name.c_str()),
         const_cast< char * >(interface_name.c_str()), const_cast< char * >(port_name.c_str()),
