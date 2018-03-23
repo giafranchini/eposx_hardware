@@ -132,14 +132,18 @@ std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
                                            const std::string &protocol_stack_name,
                                            const std::string &interface_name);
 
+// TODO: check 127 is reasonable by reading epos's manual
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
-                                       const std::string &interface_name);
+                                       const std::string &interface_name,
+                                       const unsigned short max_node_id = 127);
 
-std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info);
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
+                                       const unsigned short max_node_id = 127);
 
 NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
-                            const std::string &interface_name, const boost::uint64_t serial_number);
+                            const std::string &interface_name, const boost::uint64_t serial_number,
+                            const unsigned short max_node_id = 127);
 
 } // namespace epos_hardware
 

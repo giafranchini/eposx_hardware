@@ -54,7 +54,7 @@ DeviceInfo::DeviceInfo(const std::string &device_name, const std::string &protoc
 
 DeviceInfo::~DeviceInfo() {}
 
-struct CompareDeviceInfo {
+struct LessDeviceInfo {
   bool operator()(const DeviceInfo &a, const DeviceInfo &b) const {
     if (a.device_name != b.device_name) {
       return a.device_name < b.device_name;
@@ -80,11 +80,11 @@ DeviceHandle::DeviceHandle(const DeviceInfo &device_info) : ptr(makePtr(device_i
 DeviceHandle::~DeviceHandle() {}
 
 // global storage of opened devices
-std::map< DeviceInfo, boost::weak_ptr< void >, CompareDeviceInfo > existing_device_ptrs;
+std::map< DeviceInfo, boost::weak_ptr< void >, LessDeviceInfo > existing_device_ptrs;
 
 boost::shared_ptr< void > DeviceHandle::makePtr(const DeviceInfo &device_info) {
   // try find an existing device
-  const boost::shared_ptr< void > existing_device_ptr = existing_device_ptrs[device_info].lock();
+  const boost::shared_ptr< void > existing_device_ptr(existing_device_ptrs[device_info].lock());
   if (existing_device_ptr) {
     return existing_device_ptr;
   }
@@ -149,10 +149,12 @@ std::vector< std::string > getDeviceNameList() {
   char buffer[1024];
   int end_of_selection; // BOOL
   std::vector< std::string > device_names;
-  VCS(GetDeviceNameSelection, true, buffer, 1024, &end_of_selection);
+  VCS(GetDeviceNameSelection, true /* request start of selection */, buffer, 1024,
+      &end_of_selection);
   device_names.push_back(buffer);
   while (end_of_selection != VCS_FALSE) {
-    VCS(GetDeviceNameSelection, false, buffer, 1024, &end_of_selection);
+    VCS(GetDeviceNameSelection, false /* request the next selection */, buffer, 1024,
+        &end_of_selection);
     device_names.push_back(buffer);
   }
   return device_names;
@@ -244,21 +246,23 @@ std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
 
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
-                                       const std::string &interface_name) {
+                                       const std::string &interface_name,
+                                       const unsigned short max_node_id) {
   std::vector< NodeInfo > node_infos;
   const std::vector< DeviceInfo > device_infos(
       enumerateDevices(device_name, protocol_stack_name, interface_name));
   BOOST_FOREACH (const DeviceInfo &device_info, device_infos) {
-    const std::vector< NodeInfo > this_node_infos(enumerateNodes(device_info));
+    const std::vector< NodeInfo > this_node_infos(enumerateNodes(device_info, max_node_id));
     node_infos.insert(node_infos.end(), this_node_infos.begin(), this_node_infos.end());
   }
   return node_infos;
 }
 
-std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info) {
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
+                                       const unsigned short max_node_id) {
   // try access all possible nodes on the device
   std::vector< NodeInfo > node_infos;
-  for (unsigned short node_id = 1; node_id < 127; ++node_id) {
+  for (unsigned short node_id = 1; node_id <= max_node_id; ++node_id) {
     try {
       NodeInfo node_info(device_info, node_id);
       NodeHandle node_handle(node_info);
@@ -276,10 +280,10 @@ std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info) {
 }
 
 NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
-                            const std::string &interface_name,
-                            const boost::uint64_t serial_number) {
+                            const std::string &interface_name, const boost::uint64_t serial_number,
+                            const unsigned short max_node_id) {
   const std::vector< NodeInfo > node_infos(
-      enumerateNodes(device_name, protocol_stack_name, interface_name));
+      enumerateNodes(device_name, protocol_stack_name, interface_name, max_node_id));
   BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
     if (node_info.serial_number == serial_number) {
       return NodeHandle(node_info);
