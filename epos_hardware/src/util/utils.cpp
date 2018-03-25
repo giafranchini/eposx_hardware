@@ -97,20 +97,20 @@ boost::shared_ptr< void > DeviceHandle::makePtr(const DeviceInfo &device_info) {
 
 void *DeviceHandle::openDevice(const DeviceInfo &device_info) {
   unsigned int error_code;
-  void *const raw_ptr(VCS_OpenDevice(const_cast< char * >(device_info.device_name.c_str()),
-                                     const_cast< char * >(device_info.protocol_stack_name.c_str()),
-                                     const_cast< char * >(device_info.interface_name.c_str()),
-                                     const_cast< char * >(device_info.port_name.c_str()),
-                                     &error_code));
-  if (!raw_ptr) {
+  void *const raw_device_ptr(
+      VCS_OpenDevice(const_cast< char * >(device_info.device_name.c_str()),
+                     const_cast< char * >(device_info.protocol_stack_name.c_str()),
+                     const_cast< char * >(device_info.interface_name.c_str()),
+                     const_cast< char * >(device_info.port_name.c_str()), &error_code));
+  if (!raw_device_ptr) {
     throw EposException("OpenDevice", error_code);
   }
-  return raw_ptr;
+  return raw_device_ptr;
 }
 
-void DeviceHandle::closeDevice(void *ptr) {
+void DeviceHandle::closeDevice(void *raw_device_ptr) {
   unsigned int error_code;
-  if (VCS_CloseDevice(ptr, &error_code) == VCS_FALSE) {
+  if (VCS_CloseDevice(raw_device_ptr, &error_code) == VCS_FALSE) {
     // deleter of shared_ptr must not throw
     ROS_ERROR_STREAM("CloseDevice (" + EposException::toErrorInfo(error_code) + ")");
   }
@@ -142,7 +142,7 @@ NodeHandle::NodeHandle(const DeviceHandle &device_handle, unsigned short node_id
 NodeHandle::~NodeHandle() {}
 
 //
-// enumeration functions
+// DeviceInfo helper functions
 //
 
 std::vector< std::string > getDeviceNameList() {
@@ -244,6 +244,38 @@ std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
   return device_infos;
 }
 
+//
+// DeviceHandle helper functions
+//
+
+std::string getDeivceName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetDeviceName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+std::string getPrtocolStackName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetProtocolStackName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+std::string getInterfaceName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetInterfaceName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+std::string getPortName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetPortName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+//
+// NodeInfo helper functions
+//
+
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
                                        const std::string &interface_name,
@@ -278,6 +310,10 @@ std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
   }
   return node_infos;
 }
+
+//
+// NodeHandle helper functions
+//
 
 NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
                             const std::string &interface_name, const boost::uint64_t serial_number,

@@ -109,7 +109,7 @@ public:
 };
 
 //
-// enumeration functions
+// DeviceInfo helper functions
 //
 
 std::vector< std::string > getDeviceNameList();
@@ -132,6 +132,22 @@ std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
                                            const std::string &protocol_stack_name,
                                            const std::string &interface_name);
 
+//
+// DeviceHandle helper functions
+//
+
+std::string getDeivceName(const DeviceHandle &device_handle);
+
+std::string getPrtocolStackName(const DeviceHandle &device_handle);
+
+std::string getInterfaceName(const DeviceHandle &device_handle);
+
+std::string getPortName(const DeviceHandle &device_handle);
+
+//
+// NodeInfo helper functions
+//
+
 // TODO: check 127 is reasonable by reading epos's manual
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
@@ -140,6 +156,10 @@ std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
 
 std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
                                        const unsigned short max_node_id = 127);
+
+//
+// NodeHandle helper functions
+//
 
 NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
                             const std::string &interface_name, const boost::uint64_t serial_number,
@@ -167,51 +187,38 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     }                                                                                              \
   } while (false)
 
+// call a VCS_xxx function with epos_hardware::DeviceHandle in a if statement
+#define IF_VCS_DN(func, epos_device_handle, ...)                                                   \
+  IF_VCS(func, epos_device_handle.ptr.get(), __VA_ARGS__)
+
+// call a VCS_xxx function with epos_hardware::DeviceHandle or die
+#define VCS_DN(func, epos_device_handle, ...) VCS(func, epos_device_handle.ptr.get(), __VA_ARGS__)
+
 // call a VCS_xxx function with epos_hardware::NodeHandle in a if statement (no more arguments)
 #define IF_VCS_N0(func, epos_node_handle)                                                          \
-  if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id,                             \
-                 &::epos_hardware::EposException::error_code) != VCS_FALSE)
+  IF_VCS_DN(func, epos_node_handle, epos_node_handle.node_id)
 
 // call a VCS_xxx function with epos_hardware::NodeHandle or die (no more arguments)
-#define VCS_N0(func, epos_node_handle)                                                             \
-  do {                                                                                             \
-    unsigned int _error_code;                                                                      \
-    if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, &_error_code) ==          \
-        VCS_FALSE) {                                                                               \
-      throw ::epos_hardware::EposException(#func, _error_code);                                    \
-    }                                                                                              \
-  } while (false)
+#define VCS_N0(func, epos_node_handle) VCS_DN(func, epos_node_handle, epos_node_handle.node_id)
 
 // call a VCS_xxx function with epos_hardware::NodeHandle in a if statement
 #define IF_VCS_NN(func, epos_node_handle, ...)                                                     \
-  if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, __VA_ARGS__,                \
-                 &::epos_hardware::EposException::error_code) != VCS_FALSE)
+  IF_VCS_DN(func, epos_node_handle, epos_node_handle.node_id, __VA_ARGS__)
 
 // call a VCS_xxx function with epos_hardware::NodeHandle or die
 #define VCS_NN(func, epos_node_handle, ...)                                                        \
-  do {                                                                                             \
-    unsigned int _error_code;                                                                      \
-    if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, __VA_ARGS__,              \
-                   &_error_code) == VCS_FALSE) {                                                   \
-      throw ::epos_hardware::EposException(#func, _error_code);                                    \
-    }                                                                                              \
-  } while (false)
+  VCS_DN(func, epos_node_handle, epos_node_handle.node_id, __VA_ARGS__)
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandle in a if statement
 #define IF_VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                          \
-  if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,      \
-                 length, &::epos_hardware::EposException::bytes_transferred,                       \
-                 &::epos_hardware::EposException::error_code) != VCS_FALSE)
+  IF_VCS_NN(func, epos_node_handle, index, subindex, data, length,                                 \
+            &::epos_hardware::EposException::bytes_transferred)
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandle or die
 #define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \
   do {                                                                                             \
     unsigned int _bytes_transferred;                                                               \
-    unsigned int _error_code;                                                                      \
-    if (VCS_##func(epos_node_handle.ptr.get(), epos_node_handle.node_id, index, subindex, data,    \
-                   length, &_bytes_transferred, &_error_code) == VCS_FALSE) {                      \
-      throw ::epos_hardware::EposException(#func, _error_code);                                    \
-    }                                                                                              \
+    VCS_NN(func, epos_node_handle, index, subindex, data, length, &_bytes_transferred);            \
   } while (false)
 
 // get a ros param with given key and value pair or die
