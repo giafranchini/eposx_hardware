@@ -136,9 +136,9 @@ std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
 // DeviceHandle helper functions
 //
 
-std::string getDeivceName(const DeviceHandle &device_handle);
+std::string getDeviceName(const DeviceHandle &device_handle);
 
-std::string getPrtocolStackName(const DeviceHandle &device_handle);
+std::string getProtocolStackName(const DeviceHandle &device_handle);
 
 std::string getInterfaceName(const DeviceHandle &device_handle);
 
@@ -164,6 +164,8 @@ std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
 NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
                             const std::string &interface_name, const boost::uint64_t serial_number,
                             const unsigned short max_node_id = 127);
+
+boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
 
 } // namespace epos_hardware
 

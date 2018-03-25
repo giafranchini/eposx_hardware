@@ -248,13 +248,13 @@ std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
 // DeviceHandle helper functions
 //
 
-std::string getDeivceName(const DeviceHandle &device_handle) {
+std::string getDeviceName(const DeviceHandle &device_handle) {
   char buffer[1024];
   VCS_DN(GetDeviceName, device_handle, buffer, 1024);
   return buffer;
 }
 
-std::string getPrtocolStackName(const DeviceHandle &device_handle) {
+std::string getProtocolStackName(const DeviceHandle &device_handle) {
   char buffer[1024];
   VCS_DN(GetProtocolStackName, device_handle, buffer, 1024);
   return buffer;
@@ -300,8 +300,7 @@ std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
       NodeHandle node_handle(node_info);
       VCS_NN(GetVersion, node_handle, &node_info.hardware_version, &node_info.software_version,
              &node_info.application_number, &node_info.application_version);
-      // TODO: change index based on protocol_stack_name("epos2" or "epos4")
-      VCS_OBJ(GetObject, node_handle, 0x2100, 0x01, &node_info.serial_number, 8);
+      node_info.serial_number = getSerialNumber(node_handle);
       node_infos.push_back(node_info);
     } catch (const EposException &) {
       // node does not exist
@@ -326,6 +325,21 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
     }
   }
   throw EposException("createNodeHandle (No node found with serial number)");
+}
+
+boost::uint64_t getSerialNumber(const NodeHandle &node_handle) {
+  const std::string device_name(getDeviceName(node_handle));
+  boost::uint64_t serial_number;
+  if (device_name == "EPOS") {
+    VCS_OBJ(GetObject, node_handle, 0x2004, 0x00, &serial_number, 8);
+  } else if (device_name == "EPOS2") {
+    VCS_OBJ(GetObject, node_handle, 0x2004, 0x00, &serial_number, 8);
+  } else if (device_name == "EPOS4") {
+    VCS_OBJ(GetObject, node_handle, 0x2100, 0x01, &serial_number, 8);
+  } else {
+    throw EposException("getSerialNumber (Unsupported device name \"" + device_name + "\")");
+  }
+  return serial_number;
 }
 
 } // namespace epos_hardware
