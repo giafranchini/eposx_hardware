@@ -7,7 +7,6 @@ test_joint_motor:
 
   # map from ros_control's controller to epos's operation mode
   operation_mode_map: 
-    'default': 'profile_velocity' # operation mode on startup
     'velocity_controller': 'profile_velocity'
     'position_controller': 'profile_position'
     'effort_controller': 'current'
