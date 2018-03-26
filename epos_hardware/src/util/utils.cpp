@@ -38,9 +38,6 @@ std::string EposException::toErrorInfo(const unsigned int error_code) {
   return oss.str();
 }
 
-unsigned int EposException::error_code(0);
-unsigned int EposException::bytes_transferred(0);
-
 //
 // DeviceInfo
 //

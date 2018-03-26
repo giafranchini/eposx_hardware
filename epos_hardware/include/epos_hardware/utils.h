@@ -28,10 +28,6 @@ public:
 
   static std::string toErrorInfo(const unsigned int error_code);
 
-public:
-  static unsigned int bytes_transferred;
-  static unsigned int error_code;
-
 private:
   bool has_error_code_;
   unsigned int error_code_;
@@ -176,10 +172,6 @@ boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
 // boolean value in VCS_xxx functions
 #define VCS_FALSE 0
 
-// call a VCS_xxx function in a if statement
-#define IF_VCS(func, ...)                                                                          \
-  if (VCS_##func(__VA_ARGS__, &::epos_hardware::EposException::error_code) != VCS_FALSE)
-
 // call a VCS_xxx function or die
 #define VCS(func, ...)                                                                             \
   do {                                                                                             \
@@ -189,32 +181,15 @@ boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
     }                                                                                              \
   } while (false)
 
-// call a VCS_xxx function with epos_hardware::DeviceHandle in a if statement
-#define IF_VCS_DN(func, epos_device_handle, ...)                                                   \
-  IF_VCS(func, epos_device_handle.ptr.get(), __VA_ARGS__)
-
 // call a VCS_xxx function with epos_hardware::DeviceHandle or die
 #define VCS_DN(func, epos_device_handle, ...) VCS(func, epos_device_handle.ptr.get(), __VA_ARGS__)
-
-// call a VCS_xxx function with epos_hardware::NodeHandle in a if statement (no more arguments)
-#define IF_VCS_N0(func, epos_node_handle)                                                          \
-  IF_VCS_DN(func, epos_node_handle, epos_node_handle.node_id)
 
 // call a VCS_xxx function with epos_hardware::NodeHandle or die (no more arguments)
 #define VCS_N0(func, epos_node_handle) VCS_DN(func, epos_node_handle, epos_node_handle.node_id)
 
-// call a VCS_xxx function with epos_hardware::NodeHandle in a if statement
-#define IF_VCS_NN(func, epos_node_handle, ...)                                                     \
-  IF_VCS_DN(func, epos_node_handle, epos_node_handle.node_id, __VA_ARGS__)
-
 // call a VCS_xxx function with epos_hardware::NodeHandle or die
 #define VCS_NN(func, epos_node_handle, ...)                                                        \
   VCS_DN(func, epos_node_handle, epos_node_handle.node_id, __VA_ARGS__)
-
-// call a VCS_XxxObject function with epos_hardware::NodeHandle in a if statement
-#define IF_VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                          \
-  IF_VCS_NN(func, epos_node_handle, index, subindex, data, length,                                 \
-            &::epos_hardware::EposException::bytes_transferred)
 
 // call a VCS_XxxObject function with epos_hardware::NodeHandle or die
 #define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \

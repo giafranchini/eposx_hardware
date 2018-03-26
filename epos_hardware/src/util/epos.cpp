@@ -394,13 +394,13 @@ void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start
     if (mode_to_switch == operation_mode_map_.end()) {
       continue;
     }
-    // TODO: set disable state here ??
-    IF_VCS_NN(SetOperationMode, epos_handle_, mode_to_switch->second) {
+    try {
+      // TODO: do VCS_N0(SetDisableState, epos_handle_); ??
+      VCS_NN(SetOperationMode, epos_handle_, mode_to_switch->second);
+      // TODO: do VCS_N0(SetEnableState, epos_handle_); ??
       operation_mode_ = mode_to_switch->second;
-    }
-    // TODO: set enable state here ??
-    else {
-      ROS_ERROR_STREAM("Failed to switch mode assosicated with " << mode_to_switch->first);
+    } catch (const EposException &error) {
+      ROS_ERROR_STREAM(error.what());
     }
   }
 }
