@@ -54,10 +54,9 @@ int main(int argc, char *argv[]) {
   }
   boost::uint64_t serial_number;
   {
-    std::stringstream ss;
-    ss << serial_number_str;
-    ss >> std::hex >> serial_number;
-    if (!ss) {
+    std::istringstream iss(serial_number_str);
+    iss >> std::hex >> serial_number;
+    if (!iss) {
       std::cerr << "Error: Invalid serial number (" << serial_number_str << ")" << std::endl;
       return 1;
     }
