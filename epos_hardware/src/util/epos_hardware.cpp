@@ -47,31 +47,34 @@ EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
 
   // Load all transmissions that are for the loaded motors
   BOOST_FOREACH (const transmission_interface::TransmissionInfo &info, infos) {
-    bool found_some = false;
-    bool found_all = true;
+    // find loaded motors associated with the transmission
+    std::size_t n_found(0);
     BOOST_FOREACH (const transmission_interface::ActuatorInfo &actuator, info.actuators_) {
       if (std::find(actuator_names.begin(), actuator_names.end(), actuator.name_) !=
-          actuator_names.end())
-        found_some = true;
-      else
-        found_all = false;
+          actuator_names.end()) {
+        ++n_found;
+      }
     }
-    if (found_all) {
-      if (!transmission_loader->load(info)) {
-        ROS_ERROR_STREAM("Error loading transmission: " << info.name_);
-        return;
-      } else
-        ROS_INFO_STREAM("Loaded transmission: " << info.name_);
-    } else if (found_some) {
+    // no motors for the transmission found. skip.
+    if (n_found == 0) {
+      continue;
+    }
+    // some motors for the transmission found. not supported.
+    if (n_found < info.actuators_.size()) {
       ROS_ERROR_STREAM(
           "Do not support transmissions that contain only some EPOS actuators: " << info.name_);
+      continue;
     }
+    // all motors for the transmission found. try load the transmission.
+    if (!transmission_loader->load(info)) {
+      ROS_ERROR_STREAM("Error loading transmission: " << info.name_);
+      return;
+    }
+    ROS_INFO_STREAM("Loaded transmission: " << info.name_);
   }
 }
 
-bool EposHardware::init() { 
-  return epos_manager_.init(); 
-  }
+bool EposHardware::init() { return epos_manager_.init(); }
 
 void EposHardware::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                             const std::list< hardware_interface::ControllerInfo > &stop_list) {
@@ -80,20 +83,24 @@ void EposHardware::doSwitch(const std::list< hardware_interface::ControllerInfo 
 
 void EposHardware::read() {
   epos_manager_.read();
-  if (robot_transmissions.get< transmission_interface::ActuatorToJointStateInterface >())
+  if (robot_transmissions.get< transmission_interface::ActuatorToJointStateInterface >()) {
     robot_transmissions.get< transmission_interface::ActuatorToJointStateInterface >()->propagate();
+  }
 }
 
 void EposHardware::write() {
-  if (robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >())
+  if (robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >()) {
     robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >()
         ->propagate();
-  if (robot_transmissions.get< transmission_interface::JointToActuatorPositionInterface >())
+  }
+  if (robot_transmissions.get< transmission_interface::JointToActuatorPositionInterface >()) {
     robot_transmissions.get< transmission_interface::JointToActuatorPositionInterface >()
         ->propagate();
-  if (robot_transmissions.get< transmission_interface::JointToActuatorEffortInterface >())
+  }
+  if (robot_transmissions.get< transmission_interface::JointToActuatorEffortInterface >()) {
     robot_transmissions.get< transmission_interface::JointToActuatorEffortInterface >()
         ->propagate();
+  }
   epos_manager_.write();
 }
 
