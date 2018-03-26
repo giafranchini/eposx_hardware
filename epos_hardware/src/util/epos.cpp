@@ -98,7 +98,9 @@ void Epos::initEposNodeHandle() {
   }
 
   // create epos handle
+  // TODO: device_name, protocol_stack_name, interface_name from parameters
   epos_handle_ = createNodeHandle("EPOS4", "MAXON SERIAL V2", "USB", serial_number);
+  // TODO: proper protocol stack setting according to current protocol stack
   VCS(SetProtocolStackSettings, epos_handle_.ptr.get(), 1000000, 500);
 }
 
@@ -119,18 +121,10 @@ void Epos::initOperationMode() {
       }
     }
   }
-
-  // switch to the initial operation mode
-  const std::map< std::string, OperationMode >::const_iterator initial_mode(
-      operation_mode_map_.find("default"));
-  if (initial_mode != operation_mode_map_.end()) {
-    VCS_NN(SetOperationMode, epos_handle_, initial_mode->second);
-  } else {
-    ROS_WARN("No initial operation mode");
-  }
 }
 
 void Epos::initFaultReaction() {
+  // TODO: use corrent index and subindex according to device_name
   std::string fault_reaction_str;
   if (config_nh_.getParam("fault_reaction_option", fault_reaction_str)) {
     if (fault_reaction_str == "signal_only") {
@@ -187,6 +181,7 @@ void Epos::initMotorParameter() {
   // set motor max speed
   double max_speed;
   if (motor_nh.getParam("max_speed", max_speed)) {
+    // TODO: use correct index and subindex according to device_name
     boost::uint32_t data(max_speed);
     VCS_OBJ(SetObject, epos_handle_, 0x6080, 0x00, &data, 4);
   }
@@ -399,9 +394,11 @@ void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start
     if (mode_to_switch == operation_mode_map_.end()) {
       continue;
     }
+    // TODO: set disable state here ??
     IF_VCS_NN(SetOperationMode, epos_handle_, mode_to_switch->second) {
       operation_mode_ = mode_to_switch->second;
     }
+    // TODO: set enable state here ??
     else {
       ROS_ERROR_STREAM("Failed to switch mode assosicated with " << mode_to_switch->first);
     }
@@ -451,6 +448,7 @@ void Epos::readJointState() {
 
 void Epos::readPowerSupply() {
   boost::uint16_t voltage10x(0);
+  // TODO: use corrent index and subindex according to device_name
   VCS_OBJ(GetObject, epos_handle_, 0x2200, 0x01, &voltage10x, 2);
   // measured variables
   power_supply_state_.voltage = voltage10x / 10.;
@@ -467,6 +465,7 @@ void Epos::readPowerSupply() {
 
 void Epos::readDiagnostic() {
   // read statusword
+  // TODO: use corrent index and subindex according to device_name
   VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &statusword_, 2);
 
   // read fault info
