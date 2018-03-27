@@ -87,7 +87,16 @@ bool Epos::init() {
 }
 
 void Epos::initEposNodeHandle() {
-  // get serial number
+  // load optional device info
+  const std::string device_name(config_nh_.param< std::string >("device", "EPOS4"));
+  const std::string protocol_stack_name(
+      config_nh_.param< std::string >("protocol_stack", "MAXON SERIAL V2"));
+  const std::string interface_name(config_nh_.param< std::string >("interface", "USB"));
+  const std::string port_name(config_nh_.param< std::string >("port", ""));
+  const unsigned int baudrate(config_nh_.param("baudrate", 1000000));
+  const unsigned int timeout(config_nh_.param("timeout", 500));
+
+  // load serial number
   std::string serial_number_str;
   GET_PARAM_KV(config_nh_, "serial_number", serial_number_str);
   std::istringstream iss(serial_number_str);
@@ -98,10 +107,16 @@ void Epos::initEposNodeHandle() {
   }
 
   // create epos handle
-  // TODO: device_name, protocol_stack_name, interface_name from parameters
-  epos_handle_ = createNodeHandle("EPOS4", "MAXON SERIAL V2", "USB", serial_number);
-  // TODO: proper protocol stack setting according to current protocol stack
-  VCS(SetProtocolStackSettings, epos_handle_.ptr.get(), 1000000, 500);
+  epos_handle_ = port_name.empty() ? createNodeHandle(device_name, protocol_stack_name,
+                                                      interface_name, serial_number)
+                                   : createNodeHandle(DeviceInfo(device_name, protocol_stack_name,
+                                                                 interface_name, port_name),
+                                                      serial_number);
+
+  // TODO: find better way to set protocol stack settings common between nodes on the same device
+  if (baudrate > 0 && timeout > 0) {
+    VCS(SetProtocolStackSettings, epos_handle_.ptr.get(), baudrate, timeout);
+  }
 }
 
 void Epos::initOperationMode() {
@@ -124,24 +139,36 @@ void Epos::initOperationMode() {
 }
 
 void Epos::initFaultReaction() {
-  // TODO: use corrent index and subindex according to device_name
+  // try load fault reaction param
   std::string fault_reaction_str;
-  if (config_nh_.getParam("fault_reaction_option", fault_reaction_str)) {
-    if (fault_reaction_str == "signal_only") {
-      boost::int16_t data(-1);
-      VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
-    } else if (fault_reaction_str == "disable_drive") {
-      boost::int16_t data(0);
-      VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
-    } else if (fault_reaction_str == "slow_down_ramp") {
-      boost::int16_t data(1);
-      VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
-    } else if (fault_reaction_str == "slow_down_quickstop") {
-      boost::int16_t data(2);
-      VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
-    } else {
-      throw EposException("Invalid fault reaction option (" + fault_reaction_str + ")");
-    }
+  if (!config_nh_.getParam("fault_reaction_option", fault_reaction_str)) {
+    return;
+  }
+
+  // check fault reaction is supported by the device name
+  const std::string device_name(getDeviceName(epos_handle_));
+  if (device_name != "EPOS2" && device_name != "EPOS4") {
+    ROS_WARN_STREAM("Skip initializing fault reaction on "
+                    << motor_name_ << " because " << device_name
+                    << " does not support fault reaction options");
+    return;
+  }
+
+  // set fault reaction
+  if (fault_reaction_str == "signal_only") {
+    boost::int16_t data(-1);
+    VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
+  } else if (fault_reaction_str == "disable_drive") {
+    boost::int16_t data(0);
+    VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
+  } else if (fault_reaction_str == "slow_down_ramp") {
+    boost::int16_t data(1);
+    VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
+  } else if (fault_reaction_str == "slow_down_quickstop") {
+    boost::int16_t data(2);
+    VCS_OBJ(SetObject, epos_handle_, 0x605E, 0x00, &data, 2);
+  } else {
+    throw EposException("Invalid fault reaction option (" + fault_reaction_str + ")");
   }
 }
 
@@ -181,9 +208,18 @@ void Epos::initMotorParameter() {
   // set motor max speed
   double max_speed;
   if (motor_nh.getParam("max_speed", max_speed)) {
-    // TODO: use correct index and subindex according to device_name
-    boost::uint32_t data(max_speed);
-    VCS_OBJ(SetObject, epos_handle_, 0x6080, 0x00, &data, 4);
+    const std::string device_name(getDeviceName(epos_handle_));
+    if (device_name == "EPOS2") {
+      boost::uint32_t data(max_speed);
+      VCS_OBJ(SetObject, epos_handle_, 0x6410, 0x04, &data, 4);
+    } else if (device_name == "EPOS4") {
+      boost::uint32_t data(max_speed);
+      VCS_OBJ(SetObject, epos_handle_, 0x6080, 0x00, &data, 4);
+    } else {
+      ROS_WARN_STREAM("Skip initializing max motor speed on " << motor_name_ << " because "
+                                                              << device_name
+                                                              << " does not support this function");
+    }
   }
 }
 
@@ -447,12 +483,23 @@ void Epos::readJointState() {
 }
 
 void Epos::readPowerSupply() {
-  boost::uint16_t voltage10x(0);
-  // TODO: use corrent index and subindex according to device_name
-  VCS_OBJ(GetObject, epos_handle_, 0x2200, 0x01, &voltage10x, 2);
-  // measured variables
-  power_supply_state_.voltage = voltage10x / 10.;
-  power_supply_state_.present = (voltage10x > 0);
+  const std::string device_name(getDeviceName(epos_handle_));
+  if (device_name == "EPOS4") {
+    boost::uint16_t voltage10x;
+    VCS_OBJ(GetObject, epos_handle_, 0x2200, 0x01, &voltage10x, 2);
+    // measured variables
+    power_supply_state_.voltage = voltage10x / 10.;
+    power_supply_state_.present = true;
+  } else {
+    ROS_WARN_STREAM_ONCE("Power supply voltage of " << motor_name_ << " cannot be measured because "
+                                                    << device_name
+                                                    << " does not offer voltage information");
+    // read something from the node to make sure power supply is present
+    boost::uint16_t statusword;
+    VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &statusword, 2);
+    power_supply_state_.voltage = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_.present = true;
+  }
   // unmeasured variables
   power_supply_state_.current = std::numeric_limits< float >::quiet_NaN();
   power_supply_state_.charge = std::numeric_limits< float >::quiet_NaN();
@@ -464,8 +511,7 @@ void Epos::readPowerSupply() {
 }
 
 void Epos::readDiagnostic() {
-  // read statusword
-  // TODO: use corrent index and subindex according to device_name
+  // read statusword (this is common in all types of devices)
   VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &statusword_, 2);
 
   // read fault info
