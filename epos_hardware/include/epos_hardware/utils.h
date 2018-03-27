@@ -161,6 +161,9 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
                             const std::string &interface_name, const boost::uint64_t serial_number,
                             const unsigned short max_node_id = 127);
 
+NodeHandle createNodeHandle(const DeviceInfo &device_info, const boost::uint64_t serial_number,
+                            const unsigned short max_node_id = 127);
+
 boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
 
 } // namespace epos_hardware

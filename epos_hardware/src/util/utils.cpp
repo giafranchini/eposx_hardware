@@ -324,6 +324,17 @@ NodeHandle createNodeHandle(const std::string &device_name, const std::string &p
   throw EposException("createNodeHandle (No node found with serial number)");
 }
 
+NodeHandle createNodeHandle(const DeviceInfo &device_info, const boost::uint64_t serial_number,
+                            const unsigned short max_node_id) {
+  const std::vector< NodeInfo > node_infos(enumerateNodes(device_info, max_node_id));
+  BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
+    if (node_info.serial_number == serial_number) {
+      return NodeHandle(node_info);
+    }
+  }
+  throw EposException("createNodeHandle (No node found with serial number)");
+}
+
 boost::uint64_t getSerialNumber(const NodeHandle &node_handle) {
   const std::string device_name(getDeviceName(node_handle));
   boost::uint64_t serial_number;
