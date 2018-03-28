@@ -144,14 +144,15 @@ std::string getPortName(const DeviceHandle &device_handle);
 // NodeInfo helper functions
 //
 
-// TODO: check 127 is reasonable by reading epos's manual
+#define MAX_NODE_ID 127 // range of node id is [1,127]
+
 std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
                                        const std::string &protocol_stack_name,
                                        const std::string &interface_name,
-                                       const unsigned short max_node_id = 127);
+                                       const unsigned short max_node_id = MAX_NODE_ID);
 
 std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
-                                       const unsigned short max_node_id = 127);
+                                       const unsigned short max_node_id = MAX_NODE_ID);
 
 //
 // NodeHandle helper functions
@@ -159,10 +160,10 @@ std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
 
 NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
                             const std::string &interface_name, const boost::uint64_t serial_number,
-                            const unsigned short max_node_id = 127);
+                            const unsigned short max_node_id = MAX_NODE_ID);
 
 NodeHandle createNodeHandle(const DeviceInfo &device_info, const boost::uint64_t serial_number,
-                            const unsigned short max_node_id = 127);
+                            const unsigned short max_node_id = MAX_NODE_ID);
 
 boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
 
