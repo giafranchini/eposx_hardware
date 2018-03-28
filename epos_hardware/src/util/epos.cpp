@@ -122,19 +122,21 @@ void Epos::initEposNodeHandle() {
 void Epos::initOperationMode() {
   // load mapping from ros-controllers to epos operation modes
   std::map< std::string, std::string > str_map;
-  if (config_nh_.getParam("operation_mode_map", str_map)) {
-    for (std::map< std::string, std::string >::const_iterator str_pair = str_map.begin();
-         str_pair != str_map.end(); ++str_pair) {
-      if (str_pair->second == "profile_position") {
-        operation_mode_map_[str_pair->first] = PROFILE_POSITION_MODE;
-      } else if (str_pair->second == "profile_velocity") {
-        operation_mode_map_[str_pair->first] = PROFILE_VELOCITY_MODE;
-      } else if (str_pair->second == "current") {
-        operation_mode_map_[str_pair->first] = CURRENT_MODE;
-      } else {
-        throw EposException("Invalid operation mode (" + str_pair->second + ")");
-      }
+  GET_PARAM_KV(config_nh_, "operation_mode_map", str_map);
+  for (std::map< std::string, std::string >::const_iterator str_pair = str_map.begin();
+       str_pair != str_map.end(); ++str_pair) {
+    if (str_pair->second == "profile_position") {
+      operation_mode_map_[str_pair->first] = PROFILE_POSITION_MODE;
+    } else if (str_pair->second == "profile_velocity") {
+      operation_mode_map_[str_pair->first] = PROFILE_VELOCITY_MODE;
+    } else if (str_pair->second == "current") {
+      operation_mode_map_[str_pair->first] = CURRENT_MODE;
+    } else {
+      throw EposException("Invalid operation mode (" + str_pair->second + ")");
     }
+  }
+  if (operation_mode_map_.empty()) {
+    throw EposException("Empty operation mode map");
   }
 }
 
