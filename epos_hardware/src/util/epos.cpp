@@ -437,6 +437,8 @@ void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start
       VCS_NN(SetOperationMode, epos_handle_, mode_to_switch->second);
       // TODO: do VCS_N0(SetEnableState, epos_handle_); ??
       operation_mode_ = mode_to_switch->second;
+      ROS_INFO_STREAM(motor_name_ << " switched to operation mode associated with "
+                                  << mode_to_switch->first);
     } catch (const EposException &error) {
       ROS_ERROR_STREAM(error.what());
     }
