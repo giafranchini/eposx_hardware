@@ -7,7 +7,9 @@ test_joint_motor:
   # port: "USB0" # if not given, all ports will be tried
 
   # device infomation (required)
-  serial_number: '682129000748' # epos's serial number in hex ('0x' is not required)
+  serial_number: '682129001106' # epos's serial number in hex ('0x' is not required)
+
+  torque_constant: 7.75 # [mNm/A]
 
   # general parameters (optional)
   clear_faults: true # clear faults recorded in epos on startup (default: false)
@@ -24,15 +26,15 @@ test_joint_motor:
   # motor parameters (required)
   motor:
     type: 10 # 1: DC, 10: EC sinus, 11: EC block
-    nominal_current: 8.0 # [A]
-    max_output_current: 10.0 # [A]
-    thermal_time_constant: 3.84 # thermal time constant of motor widing [s]
-    number_of_pole_pairs: 2 # EC only
+    nominal_current: 6.59 # [A]
+    max_output_current: 7.0 # [A]
+    thermal_time_constant: 4.92 # thermal time constant of motor widing [s]
+    number_of_pole_pairs: 1 # EC only
 
   # sensor parameters (required)
   sensor:
     type: 1 # 1: INC 3CH, 2: INC 2CH, 4: SSI ABS BIN, 5: SSI ABS GRY
-    resolution: 500 # encoder resolution
+    resolution: 512 # encoder resolution
     inverted_polarity: false
 
   # safety parameters (required)
