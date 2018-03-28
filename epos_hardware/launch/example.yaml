@@ -1,7 +1,7 @@
 # motor name. should match an actuator name in a transmission interface
 test_joint_motor:
   # device information (optional, default: "EPOS4", "MAXON SERIAL V2", "USB")
-  device: "EPOS2"
+  device: "EPOS4"
   protocol_stack: "MAXON SERIAL V2"
   interface: "USB"
   # port: "USB0" # if not given, all ports will be tried
@@ -11,11 +11,11 @@ test_joint_motor:
 
   # general parameters (optional)
   clear_faults: true # clear faults recorded in epos on startup (default: false)
-  rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in topics
+  rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in hardware interfaces
                      # or epos standard units (quad count of encoder pulse(qc), rpm, mNm)
                      # (default: false)
 
-  # map from ros_control's controller to epos's operation mode
+  # map from ros_control's controller to epos's operation mode (required)
   operation_mode_map: 
     'velocity_controller': 'profile_velocity'
     'position_controller': 'profile_position'
@@ -28,13 +28,6 @@ test_joint_motor:
     max_output_current: 10.0 # [A]
     thermal_time_constant: 3.84 # thermal time constant of motor widing [s]
     number_of_pole_pairs: 2 # EC only
-
-  # power supply parameters (optional)
-  power_supply:
-    name: 'battery' # if not empty, sensor_msgs::BatteryState will be published in 'battery' topic
-    location: 'battery_slot' # corresponds BatteryState::location
-    technology: 2 # corresponds BatteryState::power_supply_technology
-    serial_number: 'unknown' # corresponds BatteryState::serial_number
 
   # sensor parameters (required)
   sensor:
@@ -58,3 +51,10 @@ test_joint_motor:
   velocity_profile:
     acceleration: 8000 # [rpm/s]
     deceleration: 9000 # [rpm/s]
+
+  # power supply parameters (optional)
+  power_supply:
+    name: 'battery' # if not empty, a battery hardware interface will be registered
+    location: 'battery_slot' # corresponds BatteryState::location
+    technology: 2 # corresponds BatteryState::power_supply_technology
+    serial_number: 'unknown' # corresponds BatteryState::serial_number
