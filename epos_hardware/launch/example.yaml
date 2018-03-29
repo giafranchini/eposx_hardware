@@ -7,6 +7,7 @@ test_joint_motor:
   # port: "USB0" # if not given, all ports will be tried
 
   # device infomation (required)
+  node_id: 1
   serial_number: '682129001106' # epos's serial number in hex ('0x' is not required)
 
   torque_constant: 7.75 # [mNm/A]
