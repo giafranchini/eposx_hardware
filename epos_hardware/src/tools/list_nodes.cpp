@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     options.add(
         boost::make_shared< bpo::option_description >("rs232", bpo::bool_switch(&list_rs232)));
     options.add(boost::make_shared< bpo::option_description >(
-        "max-node-id", bpo::value(&max_node_id)->default_value(16)));
+        "max-node-id", bpo::value(&max_node_id)->default_value(8)));
     // parse the command line
     bpo::variables_map args;
     bpo::store(bpo::parse_command_line(argc, argv, options), args);
