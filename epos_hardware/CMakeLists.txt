@@ -2,18 +2,32 @@ cmake_minimum_required(VERSION 2.8.3)
 project(epos_hardware)
 
 find_package(catkin REQUIRED COMPONENTS
+  battery_state_interface
+  controller_manager
+  diagnostic_updater
   epos_library
   hardware_interface
-  transmission_interface
-  controller_manager
   roscpp
-  diagnostic_updater
+  sensor_msgs
+  transmission_interface
+)
+
+find_package(Boost REQUIRED COMPONENTS
+  program_options
 )
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES epos_library_utils epos_manager epos_hardware
-  CATKIN_DEPENDS epos_library hardware_interface roscpp controller_manager diagnostic_updater
+  CATKIN_DEPENDS 
+  battery_state_interface 
+  controller_manager 
+  diagnostic_updater 
+  epos_library 
+  hardware_interface 
+  roscpp 
+  sensor_msgs
+  transmission_interface
 )
 
 ###########
@@ -34,10 +48,11 @@ target_link_libraries(epos_library_utils
 )
 
 
-# Build tool to list available devices
-add_executable(list_devices src/tools/list_devices.cpp)
-target_link_libraries(list_devices
+# Build tool to list available nodes
+add_executable(list_nodes src/tools/list_nodes.cpp)
+target_link_libraries(list_nodes
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
   epos_library_utils
 )
 
@@ -45,11 +60,13 @@ target_link_libraries(list_devices
 add_executable(get_state src/tools/get_state.cpp)
 target_link_libraries(get_state
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
   epos_library_utils
 )
 
 add_library(epos_manager
-  src/util/epos.cpp src/util/epos_manager.cpp
+  src/util/epos.cpp
+  src/util/epos_manager.cpp
 )
 target_link_libraries(epos_manager
   ${catkin_LIBRARIES}
@@ -65,8 +82,8 @@ target_link_libraries(epos_hardware
   epos_library_utils
 )
 
-
-add_executable(epos_hardware_node src/nodes/epos_hardware_node.cpp)
+add_executable(epos_hardware_node
+  src/nodes/epos_hardware_node.cpp)
 target_link_libraries(epos_hardware_node
   ${catkin_LIBRARIES}
   epos_hardware
@@ -82,8 +99,8 @@ install(PROGRAMS
   install_udev_rules
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-install(FILES 90-ftd2xx.rules
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+install(FILES 99-ftdi.rules 99-epos4.rules
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION} # BIN ?
 )
 
 install(DIRECTORY launch
@@ -91,7 +108,7 @@ install(DIRECTORY launch
 )
 
 # Mark libraries and nodes for installation
-install(TARGETS epos_library_utils epos_manager epos_hardware list_devices get_state epos_hardware_node
+install(TARGETS epos_library_utils epos_manager epos_hardware list_nodes get_state epos_hardware_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -1,15 +1,31 @@
 <launch>
+  <!-- -->
+  <!-- definition of joints, actuators, transmissions -->
   <param name="robot_description" textfile="$(find epos_hardware)/launch/example.urdf" />
-  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="my_joint_actuator">
+  <!-- -->
+  <!-- epos drivers and controllers -->
+  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="test_joint_motor" output="screen">
     <rosparam command="load" file="$(find epos_hardware)/launch/example.yaml" />
   </node>
-
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-	output="screen" args="joint_state_controller velocity_controller"/>
-  <param name="velocity_controller/type" value="velocity_controllers/JointVelocityController" />
-  <param name="velocity_controller/joint" value="test_joint" />
-  <param name="position_controller/type" value="position_controllers/JointPositionController" />
-  <param name="position_controller/joint" value="test_joint" />
+  <!-- -->
+  <!-- contoller loader (ask epos_hardware to automatically start) -->
+  <node name="controller_starter" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
+        args="battery_state_controller joint_state_controller position_controller"/>
+  <!-- -->
+  <!-- controller loader (just load and not start) -->
+ <node name="controller_loader" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
+       args="--stopped velocity_controller effort_controller"/>
+  <!-- -->
+  <!-- controller definitions -->
+  <param name="battery_state_controller/type" value="battery_state_controller/BatteryStateController" />
+  <param name="battery_state_controller/interval" value="5.0" />
+  <param name="effort_controller/type" value="effort_controllers/JointEffortController" />
+  <param name="effort_controller/joint" value="test_joint" />
   <param name="joint_state_controller/type" value="joint_state_controller/JointStateController" />
   <param name="joint_state_controller/publish_rate" value="50" />
+  <param name="position_controller/type" value="position_controllers/JointPositionController" />
+  <param name="position_controller/joint" value="test_joint" />
+  <param name="velocity_controller/type" value="velocity_controllers/JointVelocityController" />
+  <param name="velocity_controller/joint" value="test_joint" />
+  <!-- -->
 </launch>

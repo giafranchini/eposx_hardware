@@ -1,96 +1,210 @@
 #ifndef EPOS_HARDWARE_UTILS_H_
 #define EPOS_HARDWARE_UTILS_H_
 
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <map>
-#include <stdint.h>
-#include "epos_library/Definitions.h"
+
+#include <epos_library/Definitions.h>
+#include <ros/node_handle.h>
+
+#include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 
-bool SerialNumberFromHex(const std::string& str, uint64_t* serial_number);
+namespace epos_hardware {
 
-int GetErrorInfo(unsigned int error_code, std::string* error_string);
+//
+// exception which this c++ wrapper may throw
+//
 
-int GetDeviceNameList(std::vector<std::string>* device_names, unsigned int* error_code);
-
-int GetProtocolStackNameList(const std::string device_name, std::vector<std::string>* protocol_stack_names, unsigned int* error_code);
-
-int GetInterfaceNameList(const std::string device_name, const std::string protocol_stack_name,
-			 std::vector<std::string>* interface_names, unsigned int* error_code);
-
-int GetPortNameList(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-		    std::vector<std::string>* port_names, unsigned int* error_code);
-
-int GetBaudrateList(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-		    const std::string port_name, std::vector<unsigned int>* port_names, unsigned int* error_code);
-
-
-// An object that wraps a handle and closes it when destroyed
-class DeviceHandle {
+class EposException : public std::runtime_error {
 public:
-  DeviceHandle(void* ptr) : ptr(ptr) {}
-  ~DeviceHandle() {
-    unsigned int error_code;
-    VCS_CloseDevice(const_cast<void*>(ptr), &error_code);
-  }
-  void* const ptr;
-};
-typedef boost::shared_ptr<DeviceHandle> DeviceHandlePtr;
+  EposException(const std::string &what_arg);
+  EposException(const std::string &what_arg, const unsigned int error_code);
+  virtual ~EposException() throw();
 
-class NodeHandle {
+  bool hasErrorCode() const;
+  unsigned int getErrorCode() const;
+
+  static std::string toErrorInfo(const unsigned int error_code);
+
+private:
+  bool has_error_code_;
+  unsigned int error_code_;
+};
+
+//
+// information of device (node chain)
+//
+
+class DeviceInfo {
 public:
-  NodeHandle(DeviceHandlePtr device_handle, unsigned short node_id)
-    : device_handle(device_handle), node_id(node_id) {}
-  const DeviceHandlePtr device_handle;
-  const unsigned short node_id;
-};
-typedef boost::shared_ptr<NodeHandle> NodeHandlePtr;
+  DeviceInfo();
+  DeviceInfo(const std::string &device_name, const std::string &protocol_stack_name,
+             const std::string &interface_name, const std::string &port_name);
+  virtual ~DeviceInfo();
 
-typedef struct {
+public:
   std::string device_name;
   std::string protocol_stack_name;
   std::string interface_name;
   std::string port_name;
+};
+
+//
+// handle of device (node chain) which finalizes itself on destruction
+//
+
+class DeviceHandle {
+public:
+  DeviceHandle();
+  DeviceHandle(const DeviceInfo &device_info);
+  virtual ~DeviceHandle();
+
+private:
+  static boost::shared_ptr< void > makePtr(const DeviceInfo &device_info);
+  static void *openDevice(const DeviceInfo &device_info);
+  static void closeDevice(void *ptr);
+
+public:
+  boost::shared_ptr< void > ptr;
+};
+
+//
+// information of node
+//
+
+class NodeInfo : public DeviceInfo {
+public:
+  NodeInfo();
+  NodeInfo(const DeviceInfo &device_info, const unsigned short node_id);
+  virtual ~NodeInfo();
+
+public:
   unsigned short node_id;
-  uint64_t serial_number;
+  boost::uint64_t serial_number;
   unsigned short hardware_version;
   unsigned short software_version;
   unsigned short application_number;
   unsigned short application_version;
-} EnumeratedNode;
-
-class EposFactory {
-public:
-
-  EposFactory();
-  DeviceHandlePtr CreateDeviceHandle(const std::string device_name,
-				     const std::string protocol_stack_name,
-				     const std::string interface_name,
-				     const std::string port_name,
-				     unsigned int* error_code);
-
-  NodeHandlePtr CreateNodeHandle(const std::string device_name,
-				 const std::string protocol_stack_name,
-				 const std::string interface_name,
-				 uint64_t serial_number,
-				 unsigned int* error_code);
-
-  NodeHandlePtr CreateNodeHandle(const EnumeratedNode& node,
-				 unsigned int* error_code);
-
-
-  int EnumerateNodes(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-		     const std::string port_name, std::vector<EnumeratedNode>* devices, unsigned int* error_code);
-
-  int EnumerateNodes(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-		     std::vector<EnumeratedNode>* devices, unsigned int* error_code);
-
-
-private:
-  std::map<std::string, boost::weak_ptr<DeviceHandle> > existing_handles;
 };
 
+//
+// handle of node
+//
+
+class NodeHandle : public DeviceHandle {
+public:
+  NodeHandle();
+  NodeHandle(const NodeInfo &node_info);
+  NodeHandle(const DeviceHandle &device_handle, unsigned short node_id);
+  virtual ~NodeHandle();
+
+public:
+  unsigned short node_id;
+};
+
+//
+// DeviceInfo helper functions
+//
+
+std::vector< std::string > getDeviceNameList();
+
+std::vector< std::string > getProtocolStackNameList(const std::string &device_name);
+
+std::vector< std::string > getInterfaceNameList(const std::string &device_name,
+                                                const std::string &protocol_stack_name);
+
+std::vector< std::string > getPortNameList(const std::string &device_name,
+                                           const std::string &protocol_stack_name,
+                                           const std::string &interface_name);
+
+std::vector< unsigned int > getBaudrateList(const std::string &device_name,
+                                            const std::string &protocol_stack_name,
+                                            const std::string &interface_name,
+                                            const std::string &port_name);
+
+std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
+                                           const std::string &protocol_stack_name,
+                                           const std::string &interface_name);
+
+//
+// DeviceHandle helper functions
+//
+
+std::string getDeviceName(const DeviceHandle &device_handle);
+
+std::string getProtocolStackName(const DeviceHandle &device_handle);
+
+std::string getInterfaceName(const DeviceHandle &device_handle);
+
+std::string getPortName(const DeviceHandle &device_handle);
+
+//
+// NodeInfo helper functions
+//
+
+#define MAX_NODE_ID 127 // range of node id is [1,127]
+
+// list existing nodes assuming port name and/or node id may be missing
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info, const unsigned short node_id,
+                                       const unsigned short max_node_id = MAX_NODE_ID);
+
+//
+// NodeHandle helper functions
+//
+
+// create if the node can be identified by some of port name, node id, and serial number
+NodeHandle createNodeHandle(const DeviceInfo &device_info, const unsigned short node_id,
+                            const boost::uint64_t serial_number,
+                            const unsigned short max_node_id = MAX_NODE_ID);
+
+boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
+
+} // namespace epos_hardware
+
+//
+// useful macros
+//
+
+// boolean value in VCS_xxx functions
+#define VCS_FALSE 0
+
+// call a VCS_xxx function or die
+#define VCS(func, ...)                                                                             \
+  do {                                                                                             \
+    unsigned int _error_code;                                                                      \
+    if (VCS_##func(__VA_ARGS__, &_error_code) == VCS_FALSE) {                                      \
+      throw ::epos_hardware::EposException(#func, _error_code);                                    \
+    }                                                                                              \
+  } while (false)
+
+// call a VCS_xxx function with epos_hardware::DeviceHandle or die
+#define VCS_DN(func, epos_device_handle, ...) VCS(func, epos_device_handle.ptr.get(), __VA_ARGS__)
+
+// call a VCS_xxx function with epos_hardware::NodeHandle or die (no more arguments)
+#define VCS_N0(func, epos_node_handle) VCS_DN(func, epos_node_handle, epos_node_handle.node_id)
+
+// call a VCS_xxx function with epos_hardware::NodeHandle or die
+#define VCS_NN(func, epos_node_handle, ...)                                                        \
+  VCS_DN(func, epos_node_handle, epos_node_handle.node_id, __VA_ARGS__)
+
+// call a VCS_XxxObject function with epos_hardware::NodeHandle or die
+#define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \
+  do {                                                                                             \
+    unsigned int _bytes_transferred;                                                               \
+    VCS_NN(func, epos_node_handle, index, subindex, data, length, &_bytes_transferred);            \
+  } while (false)
+
+// get a ros param with given key and value pair or die
+#define GET_PARAM_KV(ros_node_handle, name, value)                                                 \
+  do {                                                                                             \
+    if (!ros_node_handle.getParam(name, value)) {                                                  \
+      throw EposException("ros::NodeHandle::getParam(" + ros_node_handle.resolveName(name) + ")"); \
+    }                                                                                              \
+  } while (false)
+
+// get a ros param or die, assuming the param name is same as the value name
+#define GET_PARAM_V(ros_node_handle, value) GET_PARAM_KV(ros_node_handle, #value, value)
 
 #endif

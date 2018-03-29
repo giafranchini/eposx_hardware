@@ -19,10 +19,12 @@
   <transmission name="test_joint_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="test_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
       <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="test_joint_actuator">
-      <mechanicalReduction>1000</mechanicalReduction>
+    <actuator name="test_joint_motor">
+      <mechanicalReduction>190</mechanicalReduction>
     </actuator>
   </transmission>
 </robot>

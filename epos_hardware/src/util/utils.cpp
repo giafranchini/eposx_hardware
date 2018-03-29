@@ -1,216 +1,356 @@
 #include "epos_hardware/utils.h"
-#include <boost/foreach.hpp>
+
+#include <ios>
+#include <map>
 #include <sstream>
 
-#define MAX_STRING_SIZE 1000
+#include <boost/foreach.hpp>
+#include <boost/weak_ptr.hpp>
 
-bool SerialNumberFromHex(const std::string& str, uint64_t* serial_number) {
-  std::stringstream ss;
-  ss << std::hex << str;
-  ss >> *serial_number;
-  return true;
-}
+#include <ros/console.h>
 
-int GetErrorInfo(unsigned int error_code, std::string* error_string) {
-  char buffer[MAX_STRING_SIZE];
-  int result;
-  if(result = VCS_GetErrorInfo(error_code, buffer, MAX_STRING_SIZE)) {
-    *error_string = buffer;
+namespace epos_hardware {
+
+//
+// EposException
+//
+
+EposException::EposException(const std::string &what_arg)
+    : std::runtime_error(what_arg), has_error_code_(false), error_code_(0) {}
+
+EposException::EposException(const std::string &what_arg, const unsigned int error_code)
+    : std::runtime_error(what_arg + " (" + toErrorInfo(error_code) + ")"), has_error_code_(true),
+      error_code_(error_code) {}
+
+EposException::~EposException() throw() {}
+
+bool EposException::hasErrorCode() const { return has_error_code_; }
+
+unsigned int EposException::getErrorCode() const { return error_code_; }
+
+std::string EposException::toErrorInfo(const unsigned int error_code) {
+  std::ostringstream oss;
+  oss << "0x" << std::hex << error_code;
+  char error_info[1024];
+  if (VCS_GetErrorInfo(error_code, error_info, 1024) != VCS_FALSE) {
+    oss << ": " << error_info;
   }
-  return result;
+  return oss.str();
 }
 
+//
+// DeviceInfo
+//
 
-int GetDeviceNameList(std::vector<std::string>* device_names, unsigned int* error_code) {
-  char buffer[MAX_STRING_SIZE];
-  int end_of_selection; //BOOL
-  int result;
+DeviceInfo::DeviceInfo() : device_name(), protocol_stack_name(), interface_name(), port_name() {}
 
-  result = VCS_GetDeviceNameSelection(true, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-  if(!result)
-    return result;
-  device_names->push_back(buffer);
+DeviceInfo::DeviceInfo(const std::string &device_name, const std::string &protocol_stack_name,
+                       const std::string &interface_name, const std::string &port_name)
+    : device_name(device_name), protocol_stack_name(protocol_stack_name),
+      interface_name(interface_name), port_name(port_name) {}
 
-  while(!end_of_selection) {
-    result = VCS_GetDeviceNameSelection(false, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-    if(!result)
-      return result;
-    device_names->push_back(buffer);
+DeviceInfo::~DeviceInfo() {}
+
+struct LessDeviceInfo {
+  bool operator()(const DeviceInfo &a, const DeviceInfo &b) const {
+    if (a.device_name != b.device_name) {
+      return a.device_name < b.device_name;
+    }
+    if (a.protocol_stack_name != b.protocol_stack_name) {
+      return a.protocol_stack_name < b.protocol_stack_name;
+    }
+    if (a.interface_name != b.interface_name) {
+      return a.interface_name < b.interface_name;
+    }
+    return a.port_name < b.port_name;
   }
+};
 
-  return 1;
-}
+//
+// DeviceHandle
+//
 
-int GetProtocolStackNameList(const std::string device_name, std::vector<std::string>* protocol_stack_names, unsigned int* error_code) {
-  char buffer[MAX_STRING_SIZE];
-  int end_of_selection; //BOOL
-  int result;
+DeviceHandle::DeviceHandle() : ptr() {}
 
-  result = VCS_GetProtocolStackNameSelection((char*)device_name.c_str(), true, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-  if(!result)
-    return result;
-  protocol_stack_names->push_back(buffer);
+DeviceHandle::DeviceHandle(const DeviceInfo &device_info) : ptr(makePtr(device_info)) {}
 
-  while(!end_of_selection) {
-    result = VCS_GetProtocolStackNameSelection((char*)device_name.c_str(), false, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-    if(!result)
-      return result;
-    protocol_stack_names->push_back(buffer);
+DeviceHandle::~DeviceHandle() {}
+
+// global storage of opened devices
+std::map< DeviceInfo, boost::weak_ptr< void >, LessDeviceInfo > existing_device_ptrs;
+
+boost::shared_ptr< void > DeviceHandle::makePtr(const DeviceInfo &device_info) {
+  // try find an existing device
+  const boost::shared_ptr< void > existing_device_ptr(existing_device_ptrs[device_info].lock());
+  if (existing_device_ptr) {
+    return existing_device_ptr;
   }
-
-  return 1;
+  // open new device if not exists
+  const boost::shared_ptr< void > new_device_ptr(/*raw ptr*/ openDevice(device_info),
+                                                 /*deleter*/ closeDevice);
+  existing_device_ptrs[device_info] = new_device_ptr;
+  return new_device_ptr;
 }
 
-
-int GetInterfaceNameList(const std::string device_name, const std::string protocol_stack_name, std::vector<std::string>* interface_names, unsigned int* error_code) {
-  char buffer[MAX_STRING_SIZE];
-  int end_of_selection; //BOOL
-  int result;
-
-  result = VCS_GetInterfaceNameSelection((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), true, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-  if(!result)
-    return result;
-  interface_names->push_back(buffer);
-
-  while(!end_of_selection) {
-    result = VCS_GetInterfaceNameSelection((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), false, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-    if(!result)
-      return result;
-    interface_names->push_back(buffer);
+void *DeviceHandle::openDevice(const DeviceInfo &device_info) {
+  unsigned int error_code;
+  void *const raw_device_ptr(
+      VCS_OpenDevice(const_cast< char * >(device_info.device_name.c_str()),
+                     const_cast< char * >(device_info.protocol_stack_name.c_str()),
+                     const_cast< char * >(device_info.interface_name.c_str()),
+                     const_cast< char * >(device_info.port_name.c_str()), &error_code));
+  if (!raw_device_ptr) {
+    throw EposException("OpenDevice", error_code);
   }
-
-  return 1;
+  return raw_device_ptr;
 }
 
-int GetPortNameList(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name, std::vector<std::string>* port_names, unsigned int* error_code) {
-  char buffer[MAX_STRING_SIZE];
-  int end_of_selection; //BOOL
-  int result;
-
-  result = VCS_GetPortNameSelection((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), (char*)interface_name.c_str(), true, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-  if(!result)
-    return result;
-  port_names->push_back(buffer);
-
-  while(!end_of_selection) {
-    result = VCS_GetPortNameSelection((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), (char*)interface_name.c_str(), false, buffer, MAX_STRING_SIZE, &end_of_selection, error_code);
-    if(!result)
-      return result;
-    port_names->push_back(buffer);
+void DeviceHandle::closeDevice(void *raw_device_ptr) {
+  unsigned int error_code;
+  if (VCS_CloseDevice(raw_device_ptr, &error_code) == VCS_FALSE) {
+    // deleter of shared_ptr must not throw
+    ROS_ERROR_STREAM("CloseDevice (" + EposException::toErrorInfo(error_code) + ")");
   }
-
-  return 1;
 }
 
-int GetBaudrateList(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-		    const std::string port_name, std::vector<unsigned int>* baudrates, unsigned int* error_code) {
+//
+// NodeInfo
+//
+
+NodeInfo::NodeInfo() : DeviceInfo(), node_id(0) {}
+
+NodeInfo::NodeInfo(const DeviceInfo &device_info, const unsigned short node_id)
+    : DeviceInfo(device_info), node_id(node_id) {}
+
+NodeInfo::~NodeInfo() {}
+
+//
+// NodeHandle
+//
+
+NodeHandle::NodeHandle() : DeviceHandle(), node_id(0) {}
+
+NodeHandle::NodeHandle(const NodeInfo &node_info)
+    : DeviceHandle(node_info), node_id(node_info.node_id) {}
+
+NodeHandle::NodeHandle(const DeviceHandle &device_handle, unsigned short node_id)
+    : DeviceHandle(device_handle), node_id(node_id) {}
+
+NodeHandle::~NodeHandle() {}
+
+//
+// DeviceInfo helper functions
+//
+
+std::vector< std::string > getDeviceNameList() {
+  char buffer[1024];
+  int end_of_selection; // BOOL
+  std::vector< std::string > device_names;
+  VCS(GetDeviceNameSelection, true /* request start of selection */, buffer, 1024,
+      &end_of_selection);
+  device_names.push_back(buffer);
+  while (end_of_selection == VCS_FALSE) {
+    VCS(GetDeviceNameSelection, false /* request the next selection */, buffer, 1024,
+        &end_of_selection);
+    device_names.push_back(buffer);
+  }
+  return device_names;
+}
+
+std::vector< std::string > getProtocolStackNameList(const std::string &device_name) {
+  char buffer[1024];
+  int end_of_selection; // BOOL
+  std::vector< std::string > protocol_stack_names;
+  VCS(GetProtocolStackNameSelection, const_cast< char * >(device_name.c_str()), true, buffer, 1024,
+      &end_of_selection);
+  protocol_stack_names.push_back(buffer);
+  while (end_of_selection == VCS_FALSE) {
+    VCS(GetProtocolStackNameSelection, const_cast< char * >(device_name.c_str()), false, buffer,
+        1024, &end_of_selection);
+    protocol_stack_names.push_back(buffer);
+  }
+  return protocol_stack_names;
+}
+
+std::vector< std::string > getInterfaceNameList(const std::string &device_name,
+                                                const std::string &protocol_stack_name) {
+  char buffer[1024];
+  int end_of_selection; // BOOL
+  std::vector< std::string > interface_names;
+  VCS(GetInterfaceNameSelection, const_cast< char * >(device_name.c_str()),
+      const_cast< char * >(protocol_stack_name.c_str()), true, buffer, 1024, &end_of_selection);
+  interface_names.push_back(buffer);
+  while (end_of_selection == VCS_FALSE) {
+    VCS(GetInterfaceNameSelection, const_cast< char * >(device_name.c_str()),
+        const_cast< char * >(protocol_stack_name.c_str()), false, buffer, 1024, &end_of_selection);
+    interface_names.push_back(buffer);
+  }
+  return interface_names;
+}
+
+std::vector< std::string > getPortNameList(const std::string &device_name,
+                                           const std::string &protocol_stack_name,
+                                           const std::string &interface_name) {
+  char buffer[1024];
+  int end_of_selection; // BOOL
+  std::vector< std::string > port_names;
+  VCS(GetPortNameSelection, const_cast< char * >(device_name.c_str()),
+      const_cast< char * >(protocol_stack_name.c_str()),
+      const_cast< char * >(interface_name.c_str()), true, buffer, 1024, &end_of_selection);
+  port_names.push_back(buffer);
+  while (end_of_selection == VCS_FALSE) {
+    VCS(GetPortNameSelection, const_cast< char * >(device_name.c_str()),
+        const_cast< char * >(protocol_stack_name.c_str()),
+        const_cast< char * >(interface_name.c_str()), false, buffer, 1024, &end_of_selection);
+    port_names.push_back(buffer);
+  }
+  return port_names;
+}
+
+std::vector< unsigned int > getBaudrateList(const std::string &device_name,
+                                            const std::string &protocol_stack_name,
+                                            const std::string &interface_name,
+                                            const std::string &port_name) {
   unsigned int baudrate;
-  int end_of_selection; //BOOL
-  int result;
-
-  result = VCS_GetBaudrateSelection((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), (char*)interface_name.c_str(), (char*)port_name.c_str(), true, &baudrate, &end_of_selection, error_code);
-  if(!result)
-    return result;
-  baudrates->push_back(baudrate);
-
-  while(!end_of_selection) {
-    result = VCS_GetBaudrateSelection((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), (char*)interface_name.c_str(), (char*)port_name.c_str(), false, &baudrate, &end_of_selection, error_code);
-    if(!result)
-      return result;
-    baudrates->push_back(baudrate);
+  int end_of_selection; // BOOL
+  std::vector< unsigned int > baudrates;
+  VCS(GetBaudrateSelection, const_cast< char * >(device_name.c_str()),
+      const_cast< char * >(protocol_stack_name.c_str()),
+      const_cast< char * >(interface_name.c_str()), const_cast< char * >(port_name.c_str()), true,
+      &baudrate, &end_of_selection);
+  baudrates.push_back(baudrate);
+  while (end_of_selection == VCS_FALSE) {
+    VCS(GetBaudrateSelection, const_cast< char * >(device_name.c_str()),
+        const_cast< char * >(protocol_stack_name.c_str()),
+        const_cast< char * >(interface_name.c_str()), const_cast< char * >(port_name.c_str()),
+        false, &baudrate, &end_of_selection);
+    baudrates.push_back(baudrate);
   }
-
-  return 1;
+  return baudrates;
 }
 
-
-
-
-
-EposFactory::EposFactory() {
-}
-
-DeviceHandlePtr EposFactory::CreateDeviceHandle(const std::string device_name,
-						const std::string protocol_stack_name,
-						const std::string interface_name,
-						const std::string port_name,
-						unsigned int* error_code) {
-  const std::string key = device_name + '/' + protocol_stack_name + '/' + interface_name + '/' + port_name;
-  DeviceHandlePtr handle;
-  if(!(handle = existing_handles[key].lock())) { // Handle exists
-    void* raw_handle = VCS_OpenDevice((char*)device_name.c_str(), (char*)protocol_stack_name.c_str(), (char*)interface_name.c_str(), (char*)port_name.c_str(), error_code);
-    if(!raw_handle) // failed to open device
-      return DeviceHandlePtr();
-
-    handle = DeviceHandlePtr(new DeviceHandle(raw_handle));
-    existing_handles[key] = handle;
+std::vector< DeviceInfo > enumerateDevices(const std::string &device_name,
+                                           const std::string &protocol_stack_name,
+                                           const std::string &interface_name) {
+  std::vector< DeviceInfo > device_infos;
+  const std::vector< std::string > port_names(
+      getPortNameList(device_name, protocol_stack_name, interface_name));
+  BOOST_FOREACH (const std::string &port_name, port_names) {
+    device_infos.push_back(DeviceInfo(device_name, protocol_stack_name, interface_name, port_name));
   }
-
-  return handle;
+  return device_infos;
 }
 
-NodeHandlePtr EposFactory::CreateNodeHandle(const std::string device_name,
-					    const std::string protocol_stack_name,
-					    const std::string interface_name,
-					    const uint64_t serial_number,
-					    unsigned int* error_code) {
-  std::vector<EnumeratedNode> nodes;
-  EnumerateNodes(device_name, protocol_stack_name, interface_name, &nodes, error_code);
-  BOOST_FOREACH(const EnumeratedNode& node, nodes) {
-    if(node.serial_number == serial_number) {
-      return CreateNodeHandle(node, error_code);
+//
+// DeviceHandle helper functions
+//
+
+std::string getDeviceName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetDeviceName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+std::string getProtocolStackName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetProtocolStackName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+std::string getInterfaceName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetInterfaceName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+std::string getPortName(const DeviceHandle &device_handle) {
+  char buffer[1024];
+  VCS_DN(GetPortName, device_handle, buffer, 1024);
+  return buffer;
+}
+
+//
+// NodeInfo helper functions
+//
+
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info, const unsigned short node_id,
+                                       const unsigned short max_node_id) {
+  // enumerate all possible devices (assuming port name may be missed)
+  const std::vector< DeviceInfo > possible_device_infos(
+      device_info.port_name.empty()
+          ? enumerateDevices(device_info.device_name, device_info.protocol_stack_name,
+                             device_info.interface_name)
+          : std::vector< DeviceInfo >(1, device_info));
+
+  // enumerate all possible nodes (assuming node id may be missed)
+  std::vector< NodeInfo > possible_node_infos;
+  BOOST_FOREACH (const DeviceInfo &possible_device_info, possible_device_infos) {
+    if (node_id == 0) {
+      for (unsigned short possible_node_id = 1; possible_node_id < max_node_id;
+           ++possible_node_id) {
+        possible_node_infos.push_back(NodeInfo(possible_device_info, possible_node_id));
+      }
+    } else {
+      possible_node_infos.push_back(NodeInfo(possible_device_info, node_id));
     }
   }
-  return NodeHandlePtr();
-}
 
-NodeHandlePtr EposFactory::CreateNodeHandle(const EnumeratedNode& node,
-					    unsigned int* error_code) {
-  DeviceHandlePtr device_handle = CreateDeviceHandle(node.device_name, node.protocol_stack_name, node.interface_name, node.port_name, error_code);
-  if(!device_handle)
-    return NodeHandlePtr();
-  return NodeHandlePtr(new NodeHandle(device_handle, node.node_id));
-}
-
-
-
-int EposFactory::EnumerateNodes(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-				const std::string port_name, std::vector<EnumeratedNode>* nodes, unsigned int* error_code) {
-  DeviceHandlePtr handle;
-  if(!(handle = CreateDeviceHandle(device_name, protocol_stack_name, interface_name, port_name, error_code))){
-    return 0;
-  }
-  for(unsigned short i = 1; i < 127; ++i) {
-    EnumeratedNode node;
-    node.device_name = device_name;
-    node.protocol_stack_name = protocol_stack_name;
-    node.interface_name = interface_name;
-    node.port_name = port_name;
-    node.node_id = i;
-    if(!VCS_GetVersion(handle->ptr, i, &node.hardware_version, &node.software_version, &node.application_number, &node.application_version, error_code)){
-      return 1;
+  // try access all possible nodes to filter existing nodes
+  std::vector< NodeInfo > existing_node_infos;
+  BOOST_FOREACH (const NodeInfo &possible_node_info, possible_node_infos) {
+    try {
+      NodeInfo node_info(possible_node_info);
+      NodeHandle node_handle(node_info);
+      VCS_NN(GetVersion, node_handle, &node_info.hardware_version, &node_info.software_version,
+             &node_info.application_number, &node_info.application_version);
+      node_info.serial_number = getSerialNumber(node_handle);
+      existing_node_infos.push_back(node_info);
+    } catch (const EposException &) {
+      // node does not exist
+      continue;
     }
-    unsigned int bytes_read;
-    if(!VCS_GetObject(handle->ptr, i, 0x2004, 0x00, &node.serial_number, 8, &bytes_read, error_code)){
-      node.serial_number = 0;
-    }
-    nodes->push_back(node);
   }
-  return 1;
+  return existing_node_infos;
 }
 
+//
+// NodeHandle helper functions
+//
 
-int EposFactory::EnumerateNodes(const std::string device_name, const std::string protocol_stack_name, const std::string interface_name,
-				std::vector<EnumeratedNode>* nodes, unsigned int* error_code) {
-  std::vector<std::string> port_names;
-  if(GetPortNameList(device_name, protocol_stack_name, interface_name, &port_names, error_code)) {
-    BOOST_FOREACH(const std::string& port_name, port_names) {
-      if(!EnumerateNodes(device_name, protocol_stack_name, interface_name, port_name, nodes, error_code)){
-	return 0;
+NodeHandle createNodeHandle(const DeviceInfo &device_info, const unsigned short node_id,
+                            const boost::uint64_t serial_number, const unsigned short max_node_id) {
+  // get existing node infos
+  const std::vector< NodeInfo > node_infos(enumerateNodes(device_info, node_id, max_node_id));
+
+  // identify the node (assuming serial number may be missed)
+  if (serial_number == 0) {
+    if (node_infos.size() == 1) {
+      return NodeHandle(node_infos.front());
+    }
+  } else {
+    BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
+      if (node_info.serial_number == serial_number) {
+        return NodeHandle(node_info);
       }
     }
-    return 1;
   }
-  else
-    return 0;
+
+  throw EposException("createNodeHandle (Could not identify node)");
 }
+
+boost::uint64_t getSerialNumber(const NodeHandle &node_handle) {
+  const std::string device_name(getDeviceName(node_handle));
+  boost::uint64_t serial_number;
+  if (device_name == "EPOS") {
+    VCS_OBJ(GetObject, node_handle, 0x2004, 0x00, &serial_number, 8);
+  } else if (device_name == "EPOS2") {
+    VCS_OBJ(GetObject, node_handle, 0x2004, 0x00, &serial_number, 8);
+  } else if (device_name == "EPOS4") {
+    VCS_OBJ(GetObject, node_handle, 0x2100, 0x01, &serial_number, 8);
+  } else {
+    throw EposException("getSerialNumber (Unsupported device name \"" + device_name + "\")");
+  }
+  return serial_number;
+}
+
+} // namespace epos_hardware

@@ -1,36 +1,61 @@
-# Time in seconds
-# Current in amps
-# position, velocity, and acceleration in device units
-my_joint_actuator:
-  actuator_name: 'test_joint_actuator'
-  serial_number: '662080000026'
-  operation_mode: 'profile_velocity'
-  clear_faults: true
+# motor name. should match an actuator name in a transmission interface
+test_joint_motor:
+  # epos's node information (must be enough to identify the node)
+  device: 'EPOS4' # default: 'EPOS4'
+  protocol_stack: 'MAXON SERIAL V2' # default: 'MAXON SERIAL V2'
+  interface: 'USB' # default: 'USB'
+  port: '' # default: '' (any port)
+  node_id: 1 # default: 0 (any node id)
+  serial_number: '682129001106' # epos's serial number in hex (default: '0' (any number))
 
+  torque_constant: 7.75 # [mNm/A]
+
+  # general parameters (optional)
+  clear_faults: true # clear faults recorded in epos on startup (default: false)
+  rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in hardware interfaces
+                     # or epos standard units (quad count of encoder pulse(qc), rpm, mNm)
+                     # (default: false)
+
+  # map from ros_control's controller to epos's operation mode (required)
+  operation_mode_map: 
+    'velocity_controller': 'profile_velocity'
+    'position_controller': 'profile_position'
+    'effort_controller': 'current'
+
+  # motor parameters (required)
   motor:
-    type: 10
-    ec_motor:
-      nominal_current: 9.650
-      max_output_current: 10.500
-      thermal_time_constant: 2.11
-      number_of_pole_pairs: 2
+    type: 10 # 1: DC, 10: EC sinus, 11: EC block
+    nominal_current: 6.59 # [A]
+    max_output_current: 7.0 # [A]
+    thermal_time_constant: 4.92 # thermal time constant of motor widing [s]
+    number_of_pole_pairs: 1 # EC only
 
+  # sensor parameters (required)
   sensor:
-    type: 1
-    incremental_encoder:
-      resolution: 500
-      inverted_polarity: false
+    type: 1 # 1: INC 3CH, 2: INC 2CH, 4: SSI ABS BIN, 5: SSI ABS GRY
+    resolution: 512 # encoder resolution
+    inverted_polarity: false
 
+  # safety parameters (required)
   safety:
-    max_following_error: 20000
-    max_profile_velocity: 12000
-    max_acceleration: 15000
+    max_following_error: 20000 # permitted error [qc] in profile_position mode
+    max_profile_velocity: 12000 # max velocity [rpm] in profile_position and profile_velocity modes
+    max_acceleration: 15000 # max acceleration [rpm/s] in profile_position nad profile_velocity modes
 
+  # profile position mode configs (optional)
   position_profile:
-    velocity: 10000
-    acceleration: 8000
-    deceleration: 9000
+    velocity: 10000 # [rpm]
+    acceleration: 8000 # [rpm/s]
+    deceleration: 9000 # [rpm/s]
 
+  # profile velocity mode configs (optional)
   velocity_profile:
-    acceleration: 8000
-    deceleration: 9000
+    acceleration: 8000 # [rpm/s]
+    deceleration: 9000 # [rpm/s]
+
+  # power supply parameters (optional)
+  power_supply:
+    name: 'battery' # if not empty, a battery hardware interface will be registered
+    location: 'battery_slot' # corresponds BatteryState::location
+    technology: 2 # corresponds BatteryState::power_supply_technology
+    serial_number: 'unknown' # corresponds BatteryState::serial_number
