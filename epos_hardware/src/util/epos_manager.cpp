@@ -1,20 +1,21 @@
-#include "epos_hardware/epos_manager.h"
+#include <epos_hardware/epos_manager.h>
+
 #include <boost/foreach.hpp>
 
 namespace epos_hardware {
 
-EposManager::EposManager(hardware_interface::ActuatorStateInterface &asi,
+EposManager::EposManager(ros::NodeHandle &nh, ros::NodeHandle &pnh,
+                         const std::vector< std::string > &motor_names,
+                         hardware_interface::ActuatorStateInterface &asi,
                          hardware_interface::VelocityActuatorInterface &avi,
                          hardware_interface::PositionActuatorInterface &api,
                          hardware_interface::EffortActuatorInterface &aei,
-                         battery_state_interface::BatteryStateInterface &bsi, ros::NodeHandle &nh,
-                         ros::NodeHandle &pnh, const std::vector< std::string > &motor_names)
-    : asi_(&asi), avi_(&avi), api_(&api), aei_(&aei), bsi_(&bsi) {
+                         battery_state_interface::BatteryStateInterface &bsi) {
   BOOST_FOREACH (const std::string &motor_name, motor_names) {
     ROS_INFO_STREAM("Loading EPOS: " << motor_name);
     ros::NodeHandle motor_config_nh(pnh, motor_name);
-    boost::shared_ptr< Epos > motor(new Epos(motor_name, nh, motor_config_nh, &epos_factory, *asi_,
-                                             *avi_, *api_, *aei_, *bsi_));
+    boost::shared_ptr< Epos > motor(
+        new Epos(nh, motor_config_nh, motor_name, asi, avi, api, aei, bsi));
     motors_.push_back(motor);
   }
 }
@@ -23,7 +24,7 @@ bool EposManager::init() {
   bool success = true;
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) {
     if (!motor->init()) {
-      ROS_ERROR_STREAM("Could not configure motor: " << motor->name());
+      ROS_ERROR_STREAM("Could not configure motor: " << motor->motorName());
       success = false;
     }
   }
@@ -45,8 +46,16 @@ void EposManager::write() {
   BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->write(); }
 }
 
-void EposManager::update_diagnostics() {
-  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->update_diagnostics(); }
+void EposManager::updateDiagnostics() {
+  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->updateDiagnostics(); }
+}
+
+std::vector< std::string > EposManager::motorNames() const {
+  std::vector< std::string > motor_names;
+  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) {
+    motor_names.push_back(motor->motorName());
+  }
+  return motor_names;
 }
 
 } // namespace epos_hardware

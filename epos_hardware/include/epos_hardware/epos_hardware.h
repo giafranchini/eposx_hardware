@@ -25,12 +25,13 @@ class EposHardware : public hardware_interface::RobotHW {
 public:
   EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
                const std::vector< std::string > &motor_names);
+
   bool init();
   virtual void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                         const std::list< hardware_interface::ControllerInfo > &stop_list);
   void read();
   void write();
-  void update_diagnostics();
+  void updateDiagnostics();
 
 private:
   hardware_interface::ActuatorStateInterface asi;
