@@ -146,23 +146,17 @@ std::string getPortName(const DeviceHandle &device_handle);
 
 #define MAX_NODE_ID 127 // range of node id is [1,127]
 
-std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
-                                       const std::string &protocol_stack_name,
-                                       const std::string &interface_name,
-                                       const unsigned short max_node_id = MAX_NODE_ID);
-
-std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
+// list existing nodes assuming port name and/or node id may be missing
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info, const unsigned short node_id,
                                        const unsigned short max_node_id = MAX_NODE_ID);
 
 //
 // NodeHandle helper functions
 //
 
-NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
-                            const std::string &interface_name, const boost::uint64_t serial_number,
-                            const unsigned short max_node_id = MAX_NODE_ID);
-
-NodeHandle createNodeHandle(const DeviceInfo &device_info, const boost::uint64_t serial_number,
+// create if the node can be identified by some of port name, node id, and serial number
+NodeHandle createNodeHandle(const DeviceInfo &device_info, const unsigned short node_id,
+                            const boost::uint64_t serial_number,
                             const unsigned short max_node_id = MAX_NODE_ID);
 
 boost::uint64_t getSerialNumber(const NodeHandle &node_handle);

@@ -273,70 +273,69 @@ std::string getPortName(const DeviceHandle &device_handle) {
 // NodeInfo helper functions
 //
 
-std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
-                                       const std::string &protocol_stack_name,
-                                       const std::string &interface_name,
+std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info, const unsigned short node_id,
                                        const unsigned short max_node_id) {
-  std::vector< NodeInfo > node_infos;
-  const std::vector< DeviceInfo > device_infos(
-      enumerateDevices(device_name, protocol_stack_name, interface_name));
-  BOOST_FOREACH (const DeviceInfo &device_info, device_infos) {
-    const std::vector< NodeInfo > this_node_infos(enumerateNodes(device_info, max_node_id));
-    node_infos.insert(node_infos.end(), this_node_infos.begin(), this_node_infos.end());
+  // enumerate all possible devices (assuming port name may be missed)
+  const std::vector< DeviceInfo > possible_device_infos(
+      device_info.port_name.empty()
+          ? enumerateDevices(device_info.device_name, device_info.protocol_stack_name,
+                             device_info.interface_name)
+          : std::vector< DeviceInfo >(1, device_info));
+
+  // enumerate all possible nodes (assuming node id may be missed)
+  std::vector< NodeInfo > possible_node_infos;
+  BOOST_FOREACH (const DeviceInfo &possible_device_info, possible_device_infos) {
+    if (node_id == 0) {
+      for (unsigned short possible_node_id = 1; possible_node_id < max_node_id;
+           ++possible_node_id) {
+        possible_node_infos.push_back(NodeInfo(possible_device_info, possible_node_id));
+      }
+    } else {
+      possible_node_infos.push_back(NodeInfo(possible_device_info, node_id));
+    }
   }
-  return node_infos;
-}
 
-std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
-                                       const unsigned short max_node_id) {
-  // create a root device handle
-  // to avoid repeating opening/closing the device in the following procudure
-  DeviceHandle device_handle(device_info);
-
-  // try access all possible nodes on the device
-  std::vector< NodeInfo > node_infos;
-  for (unsigned short node_id = 1; node_id <= max_node_id; ++node_id) {
+  // try access all possible nodes to filter existing nodes
+  std::vector< NodeInfo > existing_node_infos;
+  BOOST_FOREACH (const NodeInfo &possible_node_info, possible_node_infos) {
     try {
-      NodeInfo node_info(device_info, node_id);
+      NodeInfo node_info(possible_node_info);
       NodeHandle node_handle(node_info);
       VCS_NN(GetVersion, node_handle, &node_info.hardware_version, &node_info.software_version,
              &node_info.application_number, &node_info.application_version);
       node_info.serial_number = getSerialNumber(node_handle);
-      node_infos.push_back(node_info);
+      existing_node_infos.push_back(node_info);
     } catch (const EposException &) {
       // node does not exist
       continue;
     }
   }
-  return node_infos;
+  return existing_node_infos;
 }
 
 //
 // NodeHandle helper functions
 //
 
-NodeHandle createNodeHandle(const std::string &device_name, const std::string &protocol_stack_name,
-                            const std::string &interface_name, const boost::uint64_t serial_number,
-                            const unsigned short max_node_id) {
-  const std::vector< NodeInfo > node_infos(
-      enumerateNodes(device_name, protocol_stack_name, interface_name, max_node_id));
-  BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
-    if (node_info.serial_number == serial_number) {
-      return NodeHandle(node_info);
-    }
-  }
-  throw EposException("createNodeHandle (No node found with serial number)");
-}
+NodeHandle createNodeHandle(const DeviceInfo &device_info, const unsigned short node_id,
+                            const boost::uint64_t serial_number, const unsigned short max_node_id) {
+  // get existing node infos
+  const std::vector< NodeInfo > node_infos(enumerateNodes(device_info, node_id, max_node_id));
 
-NodeHandle createNodeHandle(const DeviceInfo &device_info, const boost::uint64_t serial_number,
-                            const unsigned short max_node_id) {
-  const std::vector< NodeInfo > node_infos(enumerateNodes(device_info, max_node_id));
-  BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
-    if (node_info.serial_number == serial_number) {
-      return NodeHandle(node_info);
+  // identify the node (assuming serial number may be missed)
+  if (serial_number == 0) {
+    if (node_infos.size() == 1) {
+      return NodeHandle(node_infos.front());
+    }
+  } else {
+    BOOST_FOREACH (const NodeInfo &node_info, node_infos) {
+      if (node_info.serial_number == serial_number) {
+        return NodeHandle(node_info);
+      }
     }
   }
-  throw EposException("createNodeHandle (No node found with serial number)");
+
+  throw EposException("createNodeHandle (Could not identify node)");
 }
 
 boost::uint64_t getSerialNumber(const NodeHandle &node_handle) {

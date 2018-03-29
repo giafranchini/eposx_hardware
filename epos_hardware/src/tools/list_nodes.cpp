@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
           const std::vector< eh::NodeInfo > nodes(barriar< eh::NodeInfo >(boost::bind(
               eh::enumerateNodes,
               eh::DeviceInfo(device_name, protocol_stack_name, interface_name, port_name),
-              max_node_id)));
+              0 /* no specific node id*/, max_node_id)));
           std::cout << "\t\t\t\tNodes (up to Node Id " << max_node_id << "):" << std::endl;
           BOOST_FOREACH (const eh::NodeInfo &node, nodes) {
             std::cout << "\t\t\t\t\tNode Id: " << std::dec << node.node_id << std::endl;

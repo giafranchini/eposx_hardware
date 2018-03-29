@@ -88,19 +88,14 @@ bool Epos::init() {
 
 void Epos::initEposNodeHandle() {
   // load optional device info
-  const std::string device_name(config_nh_.param< std::string >("device", "EPOS4"));
-  const std::string protocol_stack_name(
-      config_nh_.param< std::string >("protocol_stack", "MAXON SERIAL V2"));
-  const std::string interface_name(config_nh_.param< std::string >("interface", "USB"));
-  const std::string port_name(config_nh_.param< std::string >("port", ""));
+  const DeviceInfo device_info(config_nh_.param< std::string >("device", "EPOS4"),
+                               config_nh_.param< std::string >("protocol_stack", "MAXON SERIAL V2"),
+                               config_nh_.param< std::string >("interface", "USB"),
+                               config_nh_.param< std::string >("port", ""));
+  const unsigned short node_id(config_nh_.param("node_id", 0));
+  const std::string serial_number_str(config_nh_.param< std::string >("serial_number", "0"));
   const unsigned int baudrate(config_nh_.param("baudrate", 1000000));
   const unsigned int timeout(config_nh_.param("timeout", 500));
-
-  // load required device info
-  int node_id;
-  GET_PARAM_V(config_nh_, node_id);
-  std::string serial_number_str;
-  GET_PARAM_KV(config_nh_, "serial_number", serial_number_str);
 
   // serial number from string
   boost::uint64_t serial_number;
@@ -113,12 +108,7 @@ void Epos::initEposNodeHandle() {
   }
 
   // create epos handle
-  // TODO: better handling of node_id
-  epos_handle_ = port_name.empty() ? createNodeHandle(device_name, protocol_stack_name,
-                                                      interface_name, serial_number, node_id)
-                                   : createNodeHandle(DeviceInfo(device_name, protocol_stack_name,
-                                                                 interface_name, port_name),
-                                                      serial_number, node_id);
+  epos_handle_ = createNodeHandle(device_info, node_id, serial_number);
 
   // TODO: find better way to set protocol stack settings common between nodes on the same device
   if (baudrate > 0 && timeout > 0) {
