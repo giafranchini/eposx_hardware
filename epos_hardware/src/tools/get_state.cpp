@@ -19,7 +19,8 @@ namespace eh = epos_hardware;
 namespace bpo = boost::program_options;
 
 int main(int argc, char *argv[]) {
-  std::string device_name, protocol_stack_name, interface_name, port_name, serial_number_str;
+  eh::DeviceInfo device_info;
+  std::string serial_number_str;
   unsigned short node_id, max_node_id;
   try {
     // define available options
@@ -28,13 +29,14 @@ int main(int argc, char *argv[]) {
     options.add(
         boost::make_shared< bpo::option_description >("help", bpo::bool_switch(&show_help)));
     options.add(boost::make_shared< bpo::option_description >(
-        "device", bpo::value(&device_name)->default_value("EPOS4")));
+        "device", bpo::value(&device_info.device_name)->default_value("EPOS4")));
     options.add(boost::make_shared< bpo::option_description >(
-        "protocol-stack", bpo::value(&protocol_stack_name)->default_value("MAXON SERIAL V2")));
+        "protocol-stack",
+        bpo::value(&device_info.protocol_stack_name)->default_value("MAXON SERIAL V2")));
     options.add(boost::make_shared< bpo::option_description >(
-        "interface", bpo::value(&interface_name)->default_value("USB")));
+        "interface", bpo::value(&device_info.interface_name)->default_value("USB")));
     options.add(boost::make_shared< bpo::option_description >(
-        "port", bpo::value(&port_name)->default_value("")));
+        "port", bpo::value(&device_info.port_name)->default_value("")));
     options.add(boost::make_shared< bpo::option_description >(
         "serial-number", bpo::value(&serial_number_str)->default_value("0")));
     options.add(boost::make_shared< bpo::option_description >(
@@ -65,13 +67,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << "Searching for " << device_name << " 0x" << std::hex << serial_number << " on "
-            << interface_name << " (" << protocol_stack_name << ")" << std::endl;
+  std::cout << "Identifing a node for\n"
+            << "  device: " << device_info.device_name << "\n"
+            << "  protocol stack: " << device_info.protocol_stack_name << "\n"
+            << "  interface: " << device_info.interface_name << "\n"
+            << "  port (ignored if empty): " << device_info.port_name << "\n"
+            << "  node id (ignored if 0): " << node_id << "\n"
+            << "  serial number (ignored if 0): " << serial_number_str << std::endl;
 
   try {
-    eh::NodeHandle epos_handle(eh::createNodeHandle(
-        eh::DeviceInfo(device_name, protocol_stack_name, interface_name, port_name), node_id,
-        serial_number, max_node_id));
+    eh::NodeHandle epos_handle(
+        eh::createNodeHandle(device_info, node_id, serial_number, max_node_id));
 
     int position;
     VCS_NN(GetPositionIs, epos_handle, &position);
