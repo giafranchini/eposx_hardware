@@ -20,6 +20,7 @@ namespace bpo = boost::program_options;
 
 int main(int argc, char *argv[]) {
   std::string device_name, protocol_stack_name, interface_name, serial_number_str;
+  unsigned short max_node_id;
   try {
     // define available options
     bpo::options_description options;
@@ -34,6 +35,8 @@ int main(int argc, char *argv[]) {
         "interface", bpo::value(&interface_name)->default_value("USB")));
     options.add(boost::make_shared< bpo::option_description >("serial-number",
                                                               bpo::value(&serial_number_str)));
+    options.add(boost::make_shared< bpo::option_description >(
+        "max-node-id", bpo::value(&max_node_id)->default_value(8)));
     // parse the command line
     bpo::variables_map args;
     bpo::store(bpo::parse_command_line(argc, argv, options), args);
@@ -66,8 +69,8 @@ int main(int argc, char *argv[]) {
             << interface_name << " (" << protocol_stack_name << ")" << std::endl;
 
   try {
-    eh::NodeHandle epos_handle(
-        eh::createNodeHandle(device_name, protocol_stack_name, interface_name, serial_number));
+    eh::NodeHandle epos_handle(eh::createNodeHandle(device_name, protocol_stack_name,
+                                                    interface_name, serial_number, max_node_id));
 
     int position;
     VCS_NN(GetPositionIs, epos_handle, &position);
