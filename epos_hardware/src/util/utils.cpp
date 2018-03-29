@@ -289,6 +289,10 @@ std::vector< NodeInfo > enumerateNodes(const std::string &device_name,
 
 std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info,
                                        const unsigned short max_node_id) {
+  // create a root device handle
+  // to avoid repeating opening/closing the device in the following procudure
+  DeviceHandle device_handle(device_info);
+
   // try access all possible nodes on the device
   std::vector< NodeInfo > node_infos;
   for (unsigned short node_id = 1; node_id <= max_node_id; ++node_id) {
