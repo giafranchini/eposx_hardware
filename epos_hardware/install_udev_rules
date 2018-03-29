@@ -1,10 +1,10 @@
 #!/bin/bash
 
 echo ""
-echo "This script copies a udev rule for ftd2xx devices"
+echo "This script copies a udev rule for epos devices"
 echo ""
 
-sudo cp `rospack find epos_hardware`/90-ftd2xx.rules /etc/udev/rules.d
+sudo cp `rospack find epos_hardware`/{99-ftdi.rules,99-epos4.rules} /etc/udev/rules.d
 
 
 echo ""
