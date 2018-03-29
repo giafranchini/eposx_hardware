@@ -1,14 +1,12 @@
 # motor name. should match an actuator name in a transmission interface
 test_joint_motor:
-  # device information (optional, default: "EPOS4", "MAXON SERIAL V2", "USB")
-  device: "EPOS4"
-  protocol_stack: "MAXON SERIAL V2"
-  interface: "USB"
-  # port: "USB0" # if not given, all ports will be tried
-
-  # device infomation (required)
-  node_id: 1
-  serial_number: '682129001106' # epos's serial number in hex ('0x' is not required)
+  # epos's node information (must be enough to identify the node)
+  device: 'EPOS4' # default: 'EPOS4'
+  protocol_stack: 'MAXON SERIAL V2' # default: 'MAXON SERIAL V2'
+  interface: 'USB' # default: 'USB'
+  port: '' # default: '' (any port)
+  node_id: 1 # default: 0 (any node id)
+  serial_number: '682129001106' # epos's serial number in hex (default: '0' (any number))
 
   torque_constant: 7.75 # [mNm/A]
 
