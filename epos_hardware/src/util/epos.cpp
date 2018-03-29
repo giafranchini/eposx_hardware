@@ -96,22 +96,29 @@ void Epos::initEposNodeHandle() {
   const unsigned int baudrate(config_nh_.param("baudrate", 1000000));
   const unsigned int timeout(config_nh_.param("timeout", 500));
 
-  // load serial number
+  // load required device info
+  int node_id;
+  GET_PARAM_V(config_nh_, node_id);
   std::string serial_number_str;
   GET_PARAM_KV(config_nh_, "serial_number", serial_number_str);
-  std::istringstream iss(serial_number_str);
+
+  // serial number from string
   boost::uint64_t serial_number;
-  iss >> std::hex >> serial_number;
-  if (!iss) {
-    throw EposException("Invalid serial number (" + serial_number_str + ")");
+  {
+    std::istringstream iss(serial_number_str);
+    iss >> std::hex >> serial_number;
+    if (!iss) {
+      throw EposException("Invalid serial number (" + serial_number_str + ")");
+    }
   }
 
   // create epos handle
+  // TODO: better handling of node_id
   epos_handle_ = port_name.empty() ? createNodeHandle(device_name, protocol_stack_name,
-                                                      interface_name, serial_number)
+                                                      interface_name, serial_number, node_id)
                                    : createNodeHandle(DeviceInfo(device_name, protocol_stack_name,
                                                                  interface_name, port_name),
-                                                      serial_number);
+                                                      serial_number, node_id);
 
   // TODO: find better way to set protocol stack settings common between nodes on the same device
   if (baudrate > 0 && timeout > 0) {
