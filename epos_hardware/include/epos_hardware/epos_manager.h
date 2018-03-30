@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <epos_hardware/epos.h>
+#include <epos_hardware/epos_diagnostic_updater.h>
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
@@ -30,6 +31,7 @@ public:
 
 private:
   std::vector< boost::shared_ptr< Epos > > motors_;
+  std::vector< boost::shared_ptr< EposDiagnosticUpdater > > diagnostic_updaters_;
 };
 
 } // namespace epos_hardware

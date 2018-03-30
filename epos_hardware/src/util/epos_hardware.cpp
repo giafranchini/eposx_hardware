@@ -16,9 +16,10 @@ bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
   registerInterface(&api);
   registerInterface(&aei);
   registerInterface(&bsi);
+  registerInterface(&edi);
 
   // init motors
-  // - register state/command handles to hardware interfaces
+  // - register state/command/diagnostic handles to hardware interfaces
   // - configure motors
   try {
     epos_manager_.init(*this, root_nh, hw_nh, motor_names);

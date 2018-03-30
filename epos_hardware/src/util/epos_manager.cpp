@@ -13,9 +13,14 @@ void EposManager::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh
   BOOST_FOREACH (const std::string &motor_name, motor_names) {
     ROS_INFO_STREAM("Loading EPOS: " << motor_name);
     ros::NodeHandle motor_nh(motors_nh, motor_name);
+
     boost::shared_ptr< Epos > motor(new Epos());
     motor->init(hw, root_nh, motor_nh, motor_name);
     motors_.push_back(motor);
+
+    boost::shared_ptr< EposDiagnosticUpdater > diagnostic_updater(new EposDiagnosticUpdater());
+    diagnostic_updater->init(hw, root_nh, motor_nh, motor_name);
+    diagnostic_updaters_.push_back(diagnostic_updater);
   }
 }
 
@@ -35,7 +40,10 @@ void EposManager::write() {
 }
 
 void EposManager::updateDiagnostics() {
-  BOOST_FOREACH (const boost::shared_ptr< Epos > &motor, motors_) { motor->updateDiagnostics(); }
+  BOOST_FOREACH (const boost::shared_ptr< EposDiagnosticUpdater > &diagnostic_updater_,
+                 diagnostic_updaters_) {
+    diagnostic_updater_->update();
+  }
 }
 
 std::vector< std::string > EposManager::motorNames() const {

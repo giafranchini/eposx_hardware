@@ -16,7 +16,7 @@ namespace epos_hardware {
 
 template < typename CommandInterface >
 void registerHandleTo(hardware_interface::RobotHW &hw, const std::string &motor_name,
-                      double *command) {
+                      double *const command) {
   // make sure hardware has state interface
   hardware_interface::ActuatorStateInterface *const state_interface(
       hw.get< hardware_interface::ActuatorStateInterface >());
@@ -26,7 +26,7 @@ void registerHandleTo(hardware_interface::RobotHW &hw, const std::string &motor_
 
   // make sure state handle already registered
   const std::vector< std::string > state_names(state_interface->getNames());
-  if (std::find(state_names.begin(), state_names.end(), motor_name) != state_names.end()) {
+  if (std::find(state_names.begin(), state_names.end(), motor_name) == state_names.end()) {
     throw EposException("No ActuatorStateHandle named " + motor_name);
   }
 
@@ -63,7 +63,7 @@ void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
   epos_handle_ = epos_handle;
   const std::string device_name(getDeviceName(epos_handle_));
   if (device_name != "EPOS" && device_name != "EPOS2" && device_name != "EPOS4") {
-    throw EposException("Unsupported device (" + device_name + ")");
+    throw EposException(device_name + " does not support profile position mode");
   }
 
   // use ros unit for position command
@@ -84,7 +84,7 @@ void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
       int number_of_singleturn_bits;
       bool inverted_polarity;
       GET_PARAM_V(sensor_nh, number_of_singleturn_bits);
-      GET_PARAM_KV(motor_nh, "sensor/inverted_polarity", inverted_polarity);
+      GET_PARAM_V(sensor_nh, inverted_polarity);
       encoder_resolution_ =
           inverted_polarity ? -(1 << number_of_singleturn_bits) : (1 << number_of_singleturn_bits);
     } else {
@@ -128,7 +128,7 @@ void EposProfileVelocityMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
   epos_handle_ = epos_handle;
   const std::string device_name(getDeviceName(epos_handle_));
   if (device_name != "EPOS" && device_name != "EPOS2" && device_name != "EPOS4") {
-    throw EposException("Unsupported device (" + device_name + ")");
+    throw EposException(device_name + " does not support profile velocity mode");
   }
 
   // use ros unit for position command
@@ -155,7 +155,6 @@ void EposProfileVelocityMode::write() {
   } else {
     cmd = static_cast< int >(velocity_cmd_);
   }
-
   if (cmd == 0 && halt_velocity_) {
     VCS_N0(HaltVelocityMovement, epos_handle_);
   } else {
@@ -176,7 +175,7 @@ void EposCurrentMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &mot
   epos_handle_ = epos_handle;
   const std::string device_name(getDeviceName(epos_handle_));
   if (device_name != "EPOS" && device_name != "EPOS2") {
-    throw EposException("Unsupported device (" + device_name + ")");
+    throw EposException(device_name + " does not support current mode");
   }
 
   // use ros unit for position command
@@ -222,7 +221,7 @@ void EposCyclicSynchronoustTorqueMode::init(hardware_interface::RobotHW &hw,
   epos_handle_ = epos_handle;
   const std::string device_name(getDeviceName(epos_handle_));
   if (device_name != "EPOS4") {
-    throw EposException("Unsupported device (" + device_name + ")");
+    throw EposException(device_name + " does not support cyclic synchronoust torque mode");
   }
 
   // use ros unit for position command

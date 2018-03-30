@@ -7,6 +7,7 @@
 
 #include <battery_state_interface/battery_state_interface.hpp>
 #include <epos_hardware/epos.h>
+#include <epos_hardware/epos_diagnostic_updater.h>
 #include <epos_hardware/epos_manager.h>
 #include <epos_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
@@ -41,6 +42,7 @@ private:
   hardware_interface::PositionActuatorInterface api;
   hardware_interface::EffortActuatorInterface aei;
   battery_state_interface::BatteryStateInterface bsi;
+  EposDiagnosticInterface edi;
 
   // meta interface
   transmission_interface::RobotTransmissions robot_transmissions;
