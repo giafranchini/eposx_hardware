@@ -6,28 +6,24 @@
 #include <string>
 #include <vector>
 
-#include <battery_state_interface/battery_state_interface.hpp>
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <epos_hardware/utils.h>
-#include <hardware_interface/actuator_command_interface.h>
-#include <hardware_interface/actuator_state_interface.h>
 #include <hardware_interface/controller_info.h>
+#include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
 #include <sensor_msgs/BatteryState.h>
+
+#include <boost/cstdint.hpp>
 
 namespace epos_hardware {
 
 class Epos {
 public:
-  Epos(ros::NodeHandle &nh, ros::NodeHandle &config_nh, const std::string &motor_name,
-       hardware_interface::ActuatorStateInterface &asi,
-       hardware_interface::VelocityActuatorInterface &avi,
-       hardware_interface::PositionActuatorInterface &api,
-       hardware_interface::EffortActuatorInterface &aei,
-       battery_state_interface::BatteryStateInterface &bsi);
+  Epos();
   virtual ~Epos();
 
-  bool init();
+  void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh, ros::NodeHandle &motor_nh,
+            const std::string &motor_name);
   void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                 const std::list< hardware_interface::ControllerInfo > &stop_list);
   void read();
@@ -38,20 +34,21 @@ public:
 
 private:
   // subfunctions for init()
-  void initEposNodeHandle();
-  void initFaultReaction();
-  void initOperationMode();
-  void initMotorParameter();
-  void initSensorParameter();
-  void initSafetyParameter();
-  void initPositionRegulator();
-  void initVelocityRegulator();
-  void initCurrentRegulator();
-  void initPositionProfile();
-  void initVelocityProfile();
-  void initDeviceError();
-  void initDiagnostic();
-  void initMiscParameters();
+  void initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh);
+  void initEposNodeHandle(ros::NodeHandle &motor_nh);
+  void initFaultReaction(ros::NodeHandle &motor_nh);
+  void initOperationMode(ros::NodeHandle &motor_nh);
+  void initMotorParameter(ros::NodeHandle &motor_nh);
+  void initSensorParameter(ros::NodeHandle &motor_nh);
+  void initSafetyParameter(ros::NodeHandle &motor_nh);
+  void initPositionRegulator(ros::NodeHandle &motor_nh);
+  void initVelocityRegulator(ros::NodeHandle &motor_nh);
+  void initCurrentRegulator(ros::NodeHandle &motor_nh);
+  void initPositionProfile(ros::NodeHandle &motor_nh);
+  void initVelocityProfile(ros::NodeHandle &motor_nh);
+  void initDeviceError(ros::NodeHandle &motor_nh);
+  void initDiagnostic(ros::NodeHandle &root_nh, ros::NodeHandle &motor_nh);
+  void initMiscParameters(ros::NodeHandle &motor_nh);
 
   // subfunctions for read()
   void readJointState();
@@ -77,7 +74,6 @@ private:
   // TODO: describe member variables
 
   std::string motor_name_;
-  ros::NodeHandle config_nh_;
 
   bool has_init_;
 

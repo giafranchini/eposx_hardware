@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "epos_hardware/epos.h"
-#include "epos_hardware/epos_manager.h"
-#include "epos_hardware/utils.h"
 #include <battery_state_interface/battery_state_interface.hpp>
+#include <epos_hardware/epos.h>
+#include <epos_hardware/epos_manager.h>
+#include <epos_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 #include <hardware_interface/controller_info.h>
@@ -23,10 +23,11 @@ namespace epos_hardware {
 
 class EposHardware : public hardware_interface::RobotHW {
 public:
-  EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
-               const std::vector< std::string > &motor_names);
+  EposHardware();
+  virtual ~EposHardware();
 
-  bool init();
+  bool init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
+            const std::vector< std::string > &motor_names);
   virtual void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                         const std::list< hardware_interface::ControllerInfo > &stop_list);
   void read();
@@ -34,16 +35,19 @@ public:
   void updateDiagnostics();
 
 private:
+  // hardware interfaces motors have
   hardware_interface::ActuatorStateInterface asi;
   hardware_interface::VelocityActuatorInterface avi;
   hardware_interface::PositionActuatorInterface api;
   hardware_interface::EffortActuatorInterface aei;
   battery_state_interface::BatteryStateInterface bsi;
 
-  EposManager epos_manager_;
-
+  // meta interface
   transmission_interface::RobotTransmissions robot_transmissions;
   boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > transmission_loader;
+
+  // motor hardware
+  EposManager epos_manager_;
 };
 
 } // namespace epos_hardware

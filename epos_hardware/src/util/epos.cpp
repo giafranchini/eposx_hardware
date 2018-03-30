@@ -2,7 +2,10 @@
 #include <limits>
 #include <sstream>
 
+#include <battery_state_interface/battery_state_interface.hpp>
 #include <epos_hardware/epos.h>
+#include <hardware_interface/actuator_command_interface.h>
+#include <hardware_interface/actuator_state_interface.h>
 
 #include <boost/bind.hpp>
 #include <boost/cstdint.hpp>
@@ -11,35 +14,9 @@
 
 namespace epos_hardware {
 
-Epos::Epos(ros::NodeHandle &nh, ros::NodeHandle &config_nh, const std::string &motor_name,
-           hardware_interface::ActuatorStateInterface &asi,
-           hardware_interface::VelocityActuatorInterface &avi,
-           hardware_interface::PositionActuatorInterface &api,
-           hardware_interface::EffortActuatorInterface &aei,
-           battery_state_interface::BatteryStateInterface &bsi)
-    : config_nh_(config_nh), motor_name_(motor_name), diagnostic_updater_(nh, config_nh),
-      has_init_(false), position_(0), velocity_(0), effort_(0), current_(0), position_cmd_(0),
-      velocity_cmd_(0), torque_cmd_(0) {
-  // register hardware interfaces so that ros-controllers can find this hardware
-  {
-    hardware_interface::ActuatorStateHandle state_handle(motor_name_, &position_, &velocity_,
-                                                         &effort_);
-    asi.registerHandle(state_handle);
-    hardware_interface::ActuatorHandle position_handle(state_handle, &position_cmd_);
-    api.registerHandle(position_handle);
-    hardware_interface::ActuatorHandle velocity_handle(state_handle, &velocity_cmd_);
-    avi.registerHandle(velocity_handle);
-    hardware_interface::ActuatorHandle effort_handle(state_handle, &torque_cmd_);
-    aei.registerHandle(effort_handle);
-  }
-  // if power_supply/name is given, additionally register power supply hardware
-  std::string power_supply_name;
-  if (config_nh_.getParam("power_supply/name", power_supply_name)) {
-    battery_state_interface::BatteryStateHandle battery_state_handle(power_supply_name,
-                                                                     &power_supply_state_);
-    bsi.registerHandle(battery_state_handle);
-  }
-}
+Epos::Epos()
+    : has_init_(false), position_(0), velocity_(0), effort_(0), current_(0), position_cmd_(0),
+      velocity_cmd_(0), torque_cmd_(0) {}
 
 Epos::~Epos() {
   try {
@@ -53,49 +30,78 @@ Epos::~Epos() {
 // init() and subfunctions
 //
 
-bool Epos::init() {
-  try {
-    initEposNodeHandle();
-    ROS_INFO_STREAM(motor_name_ << " is ready to be initialized");
+void Epos::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                ros::NodeHandle &motor_nh, const std::string &motor_name) {
+  motor_name_ = motor_name;
 
-    ROS_INFO_STREAM("Disabling " << motor_name_ << " to start configuration");
-    VCS_N0(SetDisableState, epos_handle_);
+  initHardwareInterface(hw, motor_nh);
 
-    initOperationMode();
-    initFaultReaction();
-    initMotorParameter();
-    initSensorParameter();
-    initSafetyParameter();
-    initPositionRegulator();
-    initVelocityRegulator();
-    initCurrentRegulator();
-    initPositionProfile();
-    initVelocityProfile();
-    initDeviceError();
-    initDiagnostic();
-    initMiscParameters();
+  initEposNodeHandle(motor_nh);
+  ROS_INFO_STREAM(motor_name_ << " is ready to be initialized");
 
-    ROS_INFO_STREAM("Enabling " << motor_name_ << " to finalize configuration");
-    VCS_N0(SetEnableState, epos_handle_);
-  } catch (const EposException &error) {
-    ROS_ERROR_STREAM(error.what());
-    return false;
-  }
+  ROS_INFO_STREAM("Disabling " << motor_name_ << " to start configuration");
+  VCS_N0(SetDisableState, epos_handle_);
+
+  initOperationMode(motor_nh);
+  initFaultReaction(motor_nh);
+  initMotorParameter(motor_nh);
+  initSensorParameter(motor_nh);
+  initSafetyParameter(motor_nh);
+  initPositionRegulator(motor_nh);
+  initVelocityRegulator(motor_nh);
+  initCurrentRegulator(motor_nh);
+  initPositionProfile(motor_nh);
+  initVelocityProfile(motor_nh);
+  initDeviceError(motor_nh);
+  initMiscParameters(motor_nh);
+
+  ROS_INFO_STREAM("Enabling " << motor_name_ << " to finalize configuration");
+  VCS_N0(SetEnableState, epos_handle_);
 
   has_init_ = true;
-  return true;
 }
 
-void Epos::initEposNodeHandle() {
+// helper function to register a handle to a hardware interface in hardware
+template < typename Interface, typename Handle >
+void registerTo(hardware_interface::RobotHW &hw, const Handle &handle) {
+  Interface *const interface(hw.get< Interface >());
+  if (!interface) {
+    throw EposException("No interface");
+  }
+  interface->registerHandle(handle);
+}
+
+void Epos::initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh) {
+  namespace bsi = battery_state_interface;
+  namespace hi = hardware_interface;
+
+  // register actuator state handle
+  hi::ActuatorStateHandle state_handle(motor_name_, &position_, &velocity_, &effort_);
+  registerTo< hi::ActuatorStateInterface >(hw, state_handle);
+
+  // register actuator command handles
+  registerTo< hi::PositionActuatorInterface >(hw, hi::ActuatorHandle(state_handle, &position_cmd_));
+  registerTo< hi::VelocityActuatorInterface >(hw, hi::ActuatorHandle(state_handle, &velocity_cmd_));
+  registerTo< hi::EffortActuatorInterface >(hw, hi::ActuatorHandle(state_handle, &torque_cmd_));
+
+  // if power_supply/name is given, additionally register power supply hardware
+  std::string power_supply_name;
+  if (motor_nh.getParam("power_supply/name", power_supply_name)) {
+    registerTo< bsi::BatteryStateInterface >(
+        hw, bsi::BatteryStateHandle(power_supply_name, &power_supply_state_));
+  }
+}
+
+void Epos::initEposNodeHandle(ros::NodeHandle &motor_nh) {
   // load optional device info
-  const DeviceInfo device_info(config_nh_.param< std::string >("device", "EPOS4"),
-                               config_nh_.param< std::string >("protocol_stack", "MAXON SERIAL V2"),
-                               config_nh_.param< std::string >("interface", "USB"),
-                               config_nh_.param< std::string >("port", ""));
-  const unsigned short node_id(config_nh_.param("node_id", 0));
-  const std::string serial_number_str(config_nh_.param< std::string >("serial_number", "0"));
-  const unsigned int baudrate(config_nh_.param("baudrate", 1000000));
-  const unsigned int timeout(config_nh_.param("timeout", 500));
+  const DeviceInfo device_info(motor_nh.param< std::string >("device", "EPOS4"),
+                               motor_nh.param< std::string >("protocol_stack", "MAXON SERIAL V2"),
+                               motor_nh.param< std::string >("interface", "USB"),
+                               motor_nh.param< std::string >("port", ""));
+  const unsigned short node_id(motor_nh.param("node_id", 0));
+  const std::string serial_number_str(motor_nh.param< std::string >("serial_number", "0"));
+  const unsigned int baudrate(motor_nh.param("baudrate", 1000000));
+  const unsigned int timeout(motor_nh.param("timeout", 500));
 
   // serial number from string
   boost::uint64_t serial_number;
@@ -116,10 +122,10 @@ void Epos::initEposNodeHandle() {
   }
 }
 
-void Epos::initOperationMode() {
+void Epos::initOperationMode(ros::NodeHandle &motor_nh) {
   // load mapping from ros-controllers to epos operation modes
   std::map< std::string, std::string > str_map;
-  GET_PARAM_KV(config_nh_, "operation_mode_map", str_map);
+  GET_PARAM_KV(motor_nh, "operation_mode_map", str_map);
   for (std::map< std::string, std::string >::const_iterator str_pair = str_map.begin();
        str_pair != str_map.end(); ++str_pair) {
     if (str_pair->second == "profile_position") {
@@ -137,10 +143,10 @@ void Epos::initOperationMode() {
   }
 }
 
-void Epos::initFaultReaction() {
+void Epos::initFaultReaction(ros::NodeHandle &motor_nh) {
   // try load fault reaction param
   std::string fault_reaction_str;
-  if (!config_nh_.getParam("fault_reaction_option", fault_reaction_str)) {
+  if (!motor_nh.getParam("fault_reaction_option", fault_reaction_str)) {
     return;
   }
 
@@ -171,20 +177,20 @@ void Epos::initFaultReaction() {
   }
 }
 
-void Epos::initMotorParameter() {
-  ros::NodeHandle motor_nh(config_nh_, "motor");
+void Epos::initMotorParameter(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle motor_param_nh(motor_nh, "motor");
   // set motor type
   int type;
-  GET_PARAM_V(motor_nh, type);
+  GET_PARAM_V(motor_param_nh, type);
   VCS_NN(SetMotorType, epos_handle_, type);
   // set motor parameters
   nominal_current_ = 0.;
   max_current_ = 0.;
   if (type == 1 /* DC MOTOR */) {
     double thermal_time_constant;
-    GET_PARAM_KV(motor_nh, "nominal_current", nominal_current_);
-    GET_PARAM_KV(motor_nh, "max_output_current", max_current_);
-    GET_PARAM_V(motor_nh, thermal_time_constant);
+    GET_PARAM_KV(motor_param_nh, "nominal_current", nominal_current_);
+    GET_PARAM_KV(motor_param_nh, "max_output_current", max_current_);
+    GET_PARAM_V(motor_param_nh, thermal_time_constant);
     VCS_NN(SetDcMotorParameter, epos_handle_,
            static_cast< int >(1000 * nominal_current_),     // A -> mA
            static_cast< int >(1000 * max_current_),         // A -> mA
@@ -192,10 +198,10 @@ void Epos::initMotorParameter() {
   } else if (type == 10 || type == 11 /*EC MOTOR*/) {
     double thermal_time_constant;
     int number_of_pole_pairs;
-    GET_PARAM_KV(motor_nh, "nominal_current", nominal_current_);
-    GET_PARAM_KV(motor_nh, "max_output_current", max_current_);
-    GET_PARAM_V(motor_nh, thermal_time_constant);
-    GET_PARAM_V(motor_nh, number_of_pole_pairs);
+    GET_PARAM_KV(motor_param_nh, "nominal_current", nominal_current_);
+    GET_PARAM_KV(motor_param_nh, "max_output_current", max_current_);
+    GET_PARAM_V(motor_param_nh, thermal_time_constant);
+    GET_PARAM_V(motor_param_nh, number_of_pole_pairs);
     VCS_NN(SetEcMotorParameter, epos_handle_,
            static_cast< int >(1000 * nominal_current_),    // A -> mA
            static_cast< int >(1000 * max_current_),        // A -> mA
@@ -206,7 +212,7 @@ void Epos::initMotorParameter() {
   }
   // set motor max speed
   double max_speed;
-  if (motor_nh.getParam("max_speed", max_speed)) {
+  if (motor_param_nh.getParam("max_speed", max_speed)) {
     const std::string device_name(getDeviceName(epos_handle_));
     if (device_name == "EPOS2") {
       boost::uint32_t data(max_speed);
@@ -222,8 +228,8 @@ void Epos::initMotorParameter() {
   }
 }
 
-void Epos::initSensorParameter() {
-  ros::NodeHandle sensor_nh(config_nh_, "sensor");
+void Epos::initSensorParameter(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle sensor_nh(motor_nh, "sensor");
   // set sensor type
   int type;
   GET_PARAM_V(sensor_nh, type);
@@ -257,8 +263,8 @@ void Epos::initSensorParameter() {
   }
 }
 
-void Epos::initSafetyParameter() {
-  ros::NodeHandle safety_nh(config_nh_, "safety");
+void Epos::initSafetyParameter(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle safety_nh(motor_nh, "safety");
 
   int max_following_error;
   GET_PARAM_V(safety_nh, max_following_error);
@@ -272,8 +278,8 @@ void Epos::initSafetyParameter() {
   VCS_NN(SetMaxAcceleration, epos_handle_, max_acceleration);
 }
 
-void Epos::initPositionRegulator() {
-  ros::NodeHandle position_regulator_nh(config_nh_, "position_regulator");
+void Epos::initPositionRegulator(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle position_regulator_nh(motor_nh, "position_regulator");
   if (position_regulator_nh.hasParam("gain")) {
     ros::NodeHandle gain_nh(position_regulator_nh, "gain");
     int p, i, d;
@@ -291,8 +297,8 @@ void Epos::initPositionRegulator() {
   }
 }
 
-void Epos::initVelocityRegulator() {
-  ros::NodeHandle velocity_regulator_nh(config_nh_, "velocity_regulator");
+void Epos::initVelocityRegulator(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle velocity_regulator_nh(motor_nh, "velocity_regulator");
   if (velocity_regulator_nh.hasParam("gain")) {
     ros::NodeHandle gain_nh(velocity_regulator_nh, "gain");
     int p, i;
@@ -309,8 +315,8 @@ void Epos::initVelocityRegulator() {
   }
 }
 
-void Epos::initCurrentRegulator() {
-  ros::NodeHandle current_regulator_nh(config_nh_, "current_regulator");
+void Epos::initCurrentRegulator(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle current_regulator_nh(motor_nh, "current_regulator");
   if (current_regulator_nh.hasParam("gain")) {
     ros::NodeHandle gain_nh(current_regulator_nh, "gain");
     int p, i;
@@ -320,8 +326,8 @@ void Epos::initCurrentRegulator() {
   }
 }
 
-void Epos::initPositionProfile() {
-  ros::NodeHandle position_profile_nh(config_nh_, "position_profile");
+void Epos::initPositionProfile(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle position_profile_nh(motor_nh, "position_profile");
   if (position_profile_nh.hasParam("velocity")) {
     int velocity, acceleration, deceleration;
     GET_PARAM_V(position_profile_nh, velocity);
@@ -340,8 +346,8 @@ void Epos::initPositionProfile() {
   }
 }
 
-void Epos::initVelocityProfile() {
-  ros::NodeHandle velocity_profile_nh(config_nh_, "velocity_profile");
+void Epos::initVelocityProfile(ros::NodeHandle &motor_nh) {
+  ros::NodeHandle velocity_profile_nh(motor_nh, "velocity_profile");
   if (velocity_profile_nh.hasParam("acceleration")) {
     int acceleration, deceleration;
     GET_PARAM_V(velocity_profile_nh, acceleration);
@@ -359,7 +365,7 @@ void Epos::initVelocityProfile() {
   }
 }
 
-void Epos::initDeviceError() {
+void Epos::initDeviceError(ros::NodeHandle &motor_nh) {
   unsigned char num_device_errors;
   VCS_NN(GetNbOfDeviceError, epos_handle_, &num_device_errors);
   for (int i = 1; i <= num_device_errors; ++i) {
@@ -368,7 +374,7 @@ void Epos::initDeviceError() {
     ROS_WARN_STREAM("EPOS Device Error: 0x" << std::hex << device_error_code);
   }
 
-  if (config_nh_.param("clear_faults", false)) {
+  if (motor_nh.param("clear_faults", false)) {
     VCS_N0(ClearFault, epos_handle_);
   }
 
@@ -379,19 +385,22 @@ void Epos::initDeviceError() {
   }
 }
 
-void Epos::initDiagnostic() {
+void Epos::initDiagnostic(ros::NodeHandle &root_nh, ros::NodeHandle &motor_nh) {
+  // TODO: init diagnostic_updater_ by root_nh and motor_nh
+
   std::string serial_number;
-  GET_PARAM_V(config_nh_, serial_number);
+  GET_PARAM_V(motor_nh, serial_number);
   diagnostic_updater_.setHardwareID("EPOS 0x" + serial_number);
+
   diagnostic_updater_.add(motor_name_ + ": Motor",
                           boost::bind(&Epos::updateMotorDiagnostic, this, _1));
   diagnostic_updater_.add(motor_name_ + ": Motor Output",
                           boost::bind(&Epos::updateMotorOutputDiagnostic, this, _1));
 }
 
-void Epos::initMiscParameters() {
+void Epos::initMiscParameters(ros::NodeHandle &motor_nh) {
   // constant whose unit is mNm/A
-  config_nh_.param("torque_constant", torque_constant_, 0.);
+  motor_nh.param("torque_constant", torque_constant_, 0.);
   if (torque_constant_ == 0.) {
     for (std::map< std::string, OperationMode >::const_iterator mode = operation_mode_map_.begin();
          mode != operation_mode_map_.end(); ++mode) {
@@ -403,17 +412,17 @@ void Epos::initMiscParameters() {
   }
 
   // unit of outgoing states and incomming commands
-  config_nh_.param("rw_ros_units", rw_ros_units_, false);
+  motor_nh.param("rw_ros_units", rw_ros_units_, false);
 
   // halt velocity if velocity command is zero
-  config_nh_.param("halt_velocity", halt_velocity_, false);
+  motor_nh.param("halt_velocity", halt_velocity_, false);
 
   // constants in battery state
-  power_supply_state_.power_supply_technology = config_nh_.param< int >(
+  power_supply_state_.power_supply_technology = motor_nh.param< int >(
       "power_supply/technology", sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN);
-  power_supply_state_.location = config_nh_.param< std::string >("power_supply/location", "");
+  power_supply_state_.location = motor_nh.param< std::string >("power_supply/location", "");
   power_supply_state_.serial_number =
-      config_nh_.param< std::string >("power_supply/serial_number", "");
+      motor_nh.param< std::string >("power_supply/serial_number", "");
 }
 
 //
