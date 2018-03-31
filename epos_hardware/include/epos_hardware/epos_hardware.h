@@ -15,6 +15,7 @@
 #include <ros/node_handle.h>
 #include <transmission_interface/robot_transmissions.h>
 #include <transmission_interface/transmission_interface_loader.h>
+#include <joint_limits_interface/joint_limits_interface.h>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -35,16 +36,17 @@ public:
 
 private:
   // subfunctions for init()
-  void initHardwareInterfaces();
+  void initLowLevelInterfaces();
   void initMotors(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
                   const std::vector< std::string > &motor_names);
   void initTransmissions(ros::NodeHandle &root_nh);
+  void initJointLimits();
 
 private:
-  // hardware interfaces motors have
+  // low level interfaces motors actually have
   hardware_interface::ActuatorStateInterface asi;
-  hardware_interface::VelocityActuatorInterface avi;
   hardware_interface::PositionActuatorInterface api;
+  hardware_interface::VelocityActuatorInterface avi;
   hardware_interface::EffortActuatorInterface aei;
   battery_state_interface::BatteryStateInterface bsi;
   EposDiagnosticInterface edi;
@@ -52,6 +54,11 @@ private:
   // bridge between actuator and joint interfaces
   transmission_interface::RobotTransmissions robot_transmissions;
   boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > transmission_loader;
+
+  // limits related to joint interfaces 
+  joint_limits_interface::PositionJointSaturationInterface pjsi;
+  joint_limits_interface::VelocityJointSaturationInterface vjsi;
+  joint_limits_interface::EffortJointSaturationInterface ejsi;
 
   // motor hardware
   EposManager epos_manager_;

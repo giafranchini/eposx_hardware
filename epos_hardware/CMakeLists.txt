@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   diagnostic_updater
   epos_library
   hardware_interface
+  joint_limits_interface
   roscpp
   sensor_msgs
   transmission_interface
@@ -25,6 +26,7 @@ catkin_package(
   diagnostic_updater 
   epos_library 
   hardware_interface 
+  joint_limits_interface
   roscpp 
   sensor_msgs
   transmission_interface

@@ -20,7 +20,7 @@ EposHardware::~EposHardware() {}
 bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
                         const std::vector< std::string > &motor_names) {
   try {
-    initHardwareInterfaces();
+    initLowLevelInterfaces();
     initMotors(root_nh, hw_nh, motor_names);
     initTransmissions(root_nh);
     // TODO: initJointLimitInterface
@@ -31,7 +31,7 @@ bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
   return true;
 }
 
-void EposHardware::initHardwareInterfaces() {
+void EposHardware::initLowLevelInterfaces() {
   // register hardware interfaces
   registerInterface(&asi);
   registerInterface(&avi);
@@ -98,6 +98,8 @@ void EposHardware::initTransmissions(ros::NodeHandle &root_nh) {
     ROS_INFO_STREAM("Loaded transmission: " << trans_info.name_);
   }
 }
+
+void EposHardware::initJointLimits() {}
 
 //
 // doSwitch()
