@@ -77,7 +77,8 @@ void Epos::initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandl
 
   // register diagnostic handle
   registerTo< EposDiagnosticInterface >(
-      hw, EposDiagnosticHandle(motor_name_, &statusword_, &device_errors_));
+      hw,
+      EposDiagnosticHandle(motor_name_, &operation_mode_display_, &statusword_, &device_errors_));
 
   // if power_supply/name is given, additionally register power supply hardware
   std::string power_supply_name;
@@ -502,6 +503,9 @@ void Epos::readPowerSupply() {
 }
 
 void Epos::readDiagnostic() {
+  // read actual operation mode (this is common in all types of devices)
+  VCS_OBJ(GetObject, epos_handle_, 0x6061, 0x00, &operation_mode_display_, 1);
+
   // read statusword (this is common in all types of devices)
   VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &statusword_, 2);
 

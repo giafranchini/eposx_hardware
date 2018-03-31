@@ -6,6 +6,7 @@
 
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <diagnostic_updater/diagnostic_updater.h>
+#include <epos_hardware/epos_operation_mode.h>
 #include <hardware_interface/internal/hardware_resource_manager.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
@@ -17,13 +18,18 @@ namespace epos_hardware {
 
 class EposDiagnosticHandle {
 public:
-  EposDiagnosticHandle() : name_(), statusword_(NULL), device_errors_(NULL) {}
-  EposDiagnosticHandle(const std::string &name, boost::uint16_t *const statusword,
-                       std::vector< unsigned int > *const device_errors)
-      : name_(name), statusword_(statusword), device_errors_(device_errors) {}
+  EposDiagnosticHandle()
+      : name_(), operation_mode_display_(NULL), statusword_(NULL), device_errors_(NULL) {}
+  EposDiagnosticHandle(const std::string &name, const boost::int8_t *const operation_mode_display,
+                       const boost::uint16_t *const statusword,
+                       const std::vector< unsigned int > *const device_errors)
+      : name_(name), operation_mode_display_(operation_mode_display), statusword_(statusword),
+        device_errors_(device_errors) {}
   virtual ~EposDiagnosticHandle() {}
 
   std::string getName() const { return name_; }
+  boost::int8_t getOperationModeDisplay() const { return *operation_mode_display_; }
+  const boost::int8_t *getOperationModeDisplayPtr() const { return operation_mode_display_; }
   boost::uint16_t getStatusword() const { return *statusword_; }
   const boost::uint16_t *getStatuswordPtr() const { return statusword_; }
   std::vector< unsigned int > getDeviceErrors() const { return *device_errors_; }
@@ -31,6 +37,7 @@ public:
 
 private:
   std::string name_;
+  const boost::int8_t *operation_mode_display_;
   const boost::uint16_t *statusword_;
   const std::vector< unsigned int > *device_errors_;
 };
@@ -61,6 +68,7 @@ private:
 
   const double *position_, *velocity_, *effort_;
   const double *position_cmd_, *velocity_cmd_, *effort_cmd_;
+  const boost::int8_t *operation_mode_display_;
   const boost::uint16_t *statusword_;
   const std::vector< unsigned int > *device_errors_;
 };

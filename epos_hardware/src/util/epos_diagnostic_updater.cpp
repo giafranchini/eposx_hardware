@@ -83,9 +83,11 @@ void EposDiagnosticUpdater::init(hardware_interface::RobotHW &hw, ros::NodeHandl
   // try sniff diagnostic data
   EposDiagnosticHandle diagnostic_handle;
   if (getFrom< EposDiagnosticInterface >(hw, motor_name, diagnostic_handle)) {
+    operation_mode_display_ = diagnostic_handle.getOperationModeDisplayPtr();
     statusword_ = diagnostic_handle.getStatuswordPtr();
     device_errors_ = diagnostic_handle.getDeviceErrorsPtr();
   } else {
+    operation_mode_display_ = NULL;
     statusword_ = NULL;
     device_errors_ = NULL;
   }
@@ -170,7 +172,52 @@ void EposDiagnosticUpdater::updateMotorDiagnostic(
 void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
     diagnostic_updater::DiagnosticStatusWrapper &stat) {
   stat.add("Motor Name", motor_name_);
-      
+
+  // add stat of operation mode name
+  if (operation_mode_display_) {
+    switch (*operation_mode_display_) {
+    case -6:
+      stat.add("Operation Mode", "Step/Direction");
+      break;
+    case -5:
+      stat.add("Operation Mode", "MasterEncoder");
+      break;
+    case -4:
+      stat.add("Operation Mode", "Diagnostic");
+      break;
+    case -3:
+      stat.add("Operation Mode", "Current");
+      break;
+    case -2:
+      stat.add("Operation Mode", "Velocity");
+      break;
+    case -1:
+      stat.add("Operation Mode", "Position");
+      break;
+    case 1:
+      stat.add("Operation Mode", "Profile Position");
+      break;
+    case 3:
+      stat.add("Operation Mode", "Profile Velocity");
+      break;
+    case 6:
+      stat.add("Operation Mode", "Homing");
+      break;
+    case 7:
+      stat.add("Operation Mode", "Interpolated Position");
+      break;
+    case 10:
+      stat.add("Operation Mode", "Cyclic Synchronous Torque");
+      break;
+    default:
+      stat.add("Operation Mode", "Unknown (" +
+                                     boost::lexical_cast< std::string >(
+                                         static_cast< int >(*operation_mode_display_)) +
+                                     ")");
+      break;
+    }
+  }
+
   // add stats of commands
   if (position_cmd_) {
     stat.add("Commanded Position",
@@ -189,7 +236,6 @@ void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
                  " A");
   }
 
-  // TODO: add stat of operation mode name
   stat.add("Torque Constant", boost::lexical_cast< std::string >(torque_constant_) + " mNm/A");
   stat.add("Nominal Current", boost::lexical_cast< std::string >(nominal_current_) + " A");
   stat.add("Max Output Current", boost::lexical_cast< std::string >(max_output_current_) + " A");
