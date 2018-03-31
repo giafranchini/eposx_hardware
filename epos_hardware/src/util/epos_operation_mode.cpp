@@ -1,10 +1,12 @@
 #include <algorithm>
+#include <typeinfo>
 
 #include <epos_hardware/epos_operation_mode.h>
 #include <epos_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 
+#include <boost/core/demangle.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for boost::math::isnan()
 
@@ -33,7 +35,7 @@ void registerHandleTo(hardware_interface::RobotHW &hw, const std::string &motor_
   // make sure hardware has command interface
   CommandInterface *const command_interface(hw.get< CommandInterface >());
   if (!command_interface) {
-    throw EposException("No ActuatorCommandInterface");
+    throw EposException("No " + boost::core::demangle(typeid(CommandInterface).name()));
   }
 
   // register command handle

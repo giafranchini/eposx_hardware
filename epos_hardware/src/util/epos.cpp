@@ -1,6 +1,7 @@
 #include <ios>
 #include <limits>
 #include <sstream>
+#include <typeinfo>
 
 #include <battery_state_interface/battery_state_interface.hpp>
 #include <epos_hardware/epos.h>
@@ -9,6 +10,7 @@
 #include <hardware_interface/actuator_state_interface.h>
 
 #include <boost/bind.hpp>
+#include <boost/core/demangle.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -60,7 +62,7 @@ template < typename HWInterface, typename HWHandle >
 void registerTo(hardware_interface::RobotHW &hw, const HWHandle &hw_handle) {
   HWInterface *const hw_interface(hw.get< HWInterface >());
   if (!hw_interface) {
-    throw EposException("No hardware interface");
+    throw EposException("No " + boost::core::demangle(typeid(HWInterface).name()));
   }
   hw_interface->registerHandle(hw_handle);
 }
