@@ -6,15 +6,13 @@
 #include <vector>
 
 #include <battery_state_interface/battery_state_interface.hpp>
-#include <epos_hardware/epos.h>
 #include <epos_hardware/epos_diagnostic_updater.h>
 #include <epos_hardware/epos_manager.h>
-#include <epos_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
-#include <ros/ros.h>
+#include <ros/node_handle.h>
 #include <transmission_interface/robot_transmissions.h>
 #include <transmission_interface/transmission_interface_loader.h>
 
@@ -36,6 +34,13 @@ public:
   void updateDiagnostics();
 
 private:
+  // subfunctions for init()
+  void initHardwareInterfaces();
+  void initMotors(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
+                  const std::vector< std::string > &motor_names);
+  void initTransmissions(ros::NodeHandle &root_nh);
+
+private:
   // hardware interfaces motors have
   hardware_interface::ActuatorStateInterface asi;
   hardware_interface::VelocityActuatorInterface avi;
@@ -44,7 +49,7 @@ private:
   battery_state_interface::BatteryStateInterface bsi;
   EposDiagnosticInterface edi;
 
-  // meta interface
+  // bridge between actuator and joint interfaces
   transmission_interface::RobotTransmissions robot_transmissions;
   boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > transmission_loader;
 

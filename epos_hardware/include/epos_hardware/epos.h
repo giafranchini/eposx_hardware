@@ -30,8 +30,6 @@ public:
   void read();
   void write();
 
-  std::string motorName() const { return motor_name_; }
-
 private:
   // subfunctions for init()
   void initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh);
