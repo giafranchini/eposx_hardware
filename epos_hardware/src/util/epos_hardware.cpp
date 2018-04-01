@@ -99,7 +99,13 @@ void EposHardware::initTransmissions(ros::NodeHandle &root_nh) {
   }
 }
 
-void EposHardware::initJointLimits() {}
+void EposHardware::initJointLimits() {
+  // TODO:
+  //   - bind all joints to joint limits
+  //   - init each limits by URDF
+  // NOTE: <how to access joint interfaces>
+  //       transmission_loader->getData()->joint_interfaces.position_joint_interface;
+}
 
 //
 // doSwitch()
@@ -126,7 +132,10 @@ void EposHardware::read() {
 //
 
 void EposHardware::write() {
-  // TODO: enforce limits to joint command interfaces
+  // TODO:
+  //   - update joint limit values from parameter server
+  //     (must be fast. use cache or fetch in background)
+  //   - enforce limits to joint commands
   if (robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >()) {
     robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >()
         ->propagate();
