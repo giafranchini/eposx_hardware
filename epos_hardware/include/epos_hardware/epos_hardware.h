@@ -43,24 +43,22 @@ private:
   void initJointLimits();
 
 private:
-  // TODO: rename private member variables (append '_')
-
   // low level interfaces motors actually have
-  hardware_interface::ActuatorStateInterface asi;
-  hardware_interface::PositionActuatorInterface api;
-  hardware_interface::VelocityActuatorInterface avi;
-  hardware_interface::EffortActuatorInterface aei;
-  battery_state_interface::BatteryStateInterface bsi;
-  EposDiagnosticInterface edi;
+  hardware_interface::ActuatorStateInterface ator_state_iface_;
+  hardware_interface::PositionActuatorInterface pos_ator_iface_;
+  hardware_interface::VelocityActuatorInterface vel_ator_iface_;
+  hardware_interface::EffortActuatorInterface eff_ator_iface_;
+  battery_state_interface::BatteryStateInterface bat_state_iface_;
+  EposDiagnosticInterface epos_diag_iface_;
 
   // bridge between actuator and joint interfaces
-  transmission_interface::RobotTransmissions robot_transmissions;
-  boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > transmission_loader;
+  transmission_interface::RobotTransmissions robot_trans_;
+  boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > trans_iface_loader_;
 
   // limits related to joint interfaces
-  joint_limits_interface::PositionJointSaturationInterface pjsi;
-  joint_limits_interface::VelocityJointSaturationInterface vjsi;
-  joint_limits_interface::EffortJointSaturationInterface ejsi;
+  joint_limits_interface::PositionJointSaturationInterface pos_jnt_sat_iface_;
+  joint_limits_interface::VelocityJointSaturationInterface vel_jnt_sat_iface_;
+  joint_limits_interface::EffortJointSaturationInterface eff_jnt_sat_iface_;
 
   // motor hardware
   EposManager epos_manager_;
