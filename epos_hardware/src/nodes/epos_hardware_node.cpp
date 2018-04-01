@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
   while (ros::ok()) {
     const ros::Time now(ros::Time::now());
     const ros::Duration period(now - last);
-    hardware.read();
+    hardware.read(now, period);
     controllers.update(now, period);
-    hardware.write();
+    hardware.write(now, period);
     hardware.updateDiagnostics();
     last = now;
     control_rate.sleep();

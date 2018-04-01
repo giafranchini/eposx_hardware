@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   transmission_interface
+  urdf
 )
 
 find_package(Boost REQUIRED COMPONENTS
@@ -30,6 +31,7 @@ catkin_package(
   roscpp 
   sensor_msgs
   transmission_interface
+  urdf
 )
 
 ###########

@@ -13,7 +13,9 @@
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
 #include <joint_limits_interface/joint_limits_interface.h>
+#include <ros/duration.h>
 #include <ros/node_handle.h>
+#include <ros/time.h>
 #include <transmission_interface/robot_transmissions.h>
 #include <transmission_interface/transmission_interface_loader.h>
 
@@ -30,8 +32,8 @@ public:
             const std::vector< std::string > &motor_names);
   virtual void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                         const std::list< hardware_interface::ControllerInfo > &stop_list);
-  void read();
-  void write();
+  virtual void read(const ros::Time &time, const ros::Duration &period);
+  virtual void write(const ros::Time &time, const ros::Duration &period);
   void updateDiagnostics();
 
 private:
@@ -40,7 +42,7 @@ private:
   void initMotors(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
                   const std::vector< std::string > &motor_names);
   void initTransmissions(ros::NodeHandle &root_nh);
-  void initJointLimits();
+  void initJointLimits(ros::NodeHandle &root_nh);
 
 private:
   // low level interfaces motors actually have

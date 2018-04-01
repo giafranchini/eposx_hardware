@@ -3,7 +3,12 @@
 
 #include <epos_hardware/epos_hardware.h>
 #include <epos_hardware/utils.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
+#include <joint_limits_interface/joint_limits_urdf.h>
 #include <ros/console.h>
+#include <urdf/model.h>
 
 #include <boost/foreach.hpp>
 
@@ -23,7 +28,7 @@ bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
     initLowLevelInterfaces();
     initMotors(root_nh, hw_nh, motor_names);
     initTransmissions(root_nh);
-    // TODO: initJointLimitInterface
+    initJointLimits(root_nh);
   } catch (const std::exception &error) {
     ROS_ERROR_STREAM(error.what());
     return false;
@@ -102,12 +107,46 @@ void EposHardware::initTransmissions(ros::NodeHandle &root_nh) {
   }
 }
 
-void EposHardware::initJointLimits() {
-  // TODO:
-  //   - bind all joints to joint limits
-  //   - init each limits by URDF
-  // NOTE: <how to access joint interfaces>
-  //       transmission_loader->getData()->joint_interfaces.position_joint_interface;
+// register commnad saturation handles to the saturation interface.
+// each handle corresponds to a command handle in the command interface.
+// each handle is initialized by the URDF description if possible.
+template < typename SaturationHandle, typename CommandInterface, typename SaturationInterface >
+void registerHandles(CommandInterface &cmd_iface, SaturationInterface &sat_iface,
+                     const urdf::Model &urdf_model) {
+  const std::vector< std::string > jnt_names(cmd_iface.getNames());
+  BOOST_FOREACH (const std::string &jnt_name, jnt_names) {
+    joint_limits_interface::JointLimits jnt_limits;
+    joint_limits_interface::getJointLimits(
+        urdf_model.getJoint(jnt_name) /* this is ptr. null is ok */, jnt_limits);
+    sat_iface.registerHandle(SaturationHandle(cmd_iface.getHandle(jnt_name), jnt_limits));
+  }
+}
+
+void EposHardware::initJointLimits(ros::NodeHandle &root_nh) {
+  // make sure joint command data is available
+  if (!trans_iface_loader_) {
+    throw EposException("Null transmission loader");
+  }
+  transmission_interface::TransmissionLoaderData *const trans_loader_data(
+      trans_iface_loader_->getData());
+  if (!trans_loader_data) {
+    throw EposException("Null transmission loader data");
+  }
+
+  // load URDF model which contains joint limits information
+  urdf::Model urdf_model;
+  if (!urdf_model.initParamWithNodeHandle("robot_description", root_nh)) {
+    throw EposException("Failed to init URDF model");
+  }
+
+  // register all possible joint limits
+  transmission_interface::JointInterfaces &jnt_ifaces(trans_loader_data->joint_interfaces);
+  registerHandles< joint_limits_interface::PositionJointSaturationHandle >(
+      jnt_ifaces.position_joint_interface, pos_jnt_sat_iface_, urdf_model);
+  registerHandles< joint_limits_interface::VelocityJointSaturationHandle >(
+      jnt_ifaces.velocity_joint_interface, vel_jnt_sat_iface_, urdf_model);
+  registerHandles< joint_limits_interface::EffortJointSaturationHandle >(
+      jnt_ifaces.effort_joint_interface, eff_jnt_sat_iface_, urdf_model);
 }
 
 //
@@ -132,9 +171,11 @@ void propagate(transmission_interface::RobotTransmissions &robot_trans) {
   }
 }
 
-void EposHardware::read() {
+void EposHardware::read(const ros::Time &time, const ros::Duration &period) {
+  // read actutor states
   epos_manager_.read();
 
+  // update joint stats by actuator states
   propagate< transmission_interface::ActuatorToJointStateInterface >(robot_trans_);
 }
 
@@ -142,16 +183,21 @@ void EposHardware::read() {
 // write()
 //
 
-void EposHardware::write() {
-  // TODO:
-  //   - update joint limit values from parameter server
-  //     (must be fast. use cache or fetch in background)
-  //   - enforce limits to joint commands
+void EposHardware::write(const ros::Time &time, const ros::Duration &period) {
+  // TODO: update joint limit from parameter server
+  //       (must be fast. use cache or fetch in background)
 
+  // saturate joint commands
+  pos_jnt_sat_iface_.enforceLimits(period);
+  vel_jnt_sat_iface_.enforceLimits(period);
+  eff_jnt_sat_iface_.enforceLimits(period);
+
+  // update actuator commands by joint commands
   propagate< transmission_interface::JointToActuatorVelocityInterface >(robot_trans_);
   propagate< transmission_interface::JointToActuatorPositionInterface >(robot_trans_);
   propagate< transmission_interface::JointToActuatorEffortInterface >(robot_trans_);
 
+  // write actuator commands
   epos_manager_.write();
 }
 
