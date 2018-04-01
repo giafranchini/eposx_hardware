@@ -12,10 +12,10 @@
 #include <hardware_interface/actuator_state_interface.h>
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
+#include <joint_limits_interface/joint_limits_interface.h>
 #include <ros/node_handle.h>
 #include <transmission_interface/robot_transmissions.h>
 #include <transmission_interface/transmission_interface_loader.h>
-#include <joint_limits_interface/joint_limits_interface.h>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -43,6 +43,8 @@ private:
   void initJointLimits();
 
 private:
+  // TODO: rename private member variables (append '_')
+
   // low level interfaces motors actually have
   hardware_interface::ActuatorStateInterface asi;
   hardware_interface::PositionActuatorInterface api;
@@ -55,7 +57,7 @@ private:
   transmission_interface::RobotTransmissions robot_transmissions;
   boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > transmission_loader;
 
-  // limits related to joint interfaces 
+  // limits related to joint interfaces
   joint_limits_interface::PositionJointSaturationInterface pjsi;
   joint_limits_interface::VelocityJointSaturationInterface vjsi;
   joint_limits_interface::EffortJointSaturationInterface ejsi;
