@@ -14,13 +14,11 @@
   <!-- -->
   <!-- controller loader (just load and not start) -->
  <node name="controller_loader" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
-       args="--stopped velocity_controller effort_controller"/>
+       args="--stopped velocity_controller"/>
   <!-- -->
   <!-- controller definitions -->
   <param name="battery_state_controller/type" value="battery_state_controller/BatteryStateController" />
   <param name="battery_state_controller/interval" value="5.0" />
-  <param name="effort_controller/type" value="effort_controllers/JointEffortController" />
-  <param name="effort_controller/joint" value="test_joint" />
   <param name="joint_state_controller/type" value="joint_state_controller/JointStateController" />
   <param name="joint_state_controller/publish_rate" value="50" />
   <param name="position_controller/type" value="position_controllers/JointPositionController" />
