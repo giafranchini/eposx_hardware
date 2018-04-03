@@ -1,40 +1,47 @@
-#include "epos_hardware/epos_hardware.h"
-#include <controller_manager/controller_manager.h>
-#include <ros/ros.h>
-#include <ros/spinner.h>
+#include <string>
 #include <vector>
 
-int main(int argc, char **argv) {
-  ros::init(argc, argv, "epos_velocity_hardware");
+#include <controller_manager/controller_manager.h>
+#include <epos_hardware/epos_hardware.h>
+#include <ros/console.h>
+#include <ros/duration.h>
+#include <ros/init.h>
+#include <ros/node_handle.h>
+#include <ros/rate.h>
+#include <ros/spinner.h>
+#include <ros/time.h>
+
+int main(int argc, char *argv[]) {
+  ros::init(argc, argv, "epos_hardware");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
 
   std::vector< std::string > motor_names;
-  for (int i = 0; i < argc - 1; ++i) {
-    motor_names.push_back(argv[i + 1]);
+  for (std::size_t i = 1; i < argc; ++i) {
+    motor_names.push_back(argv[i]);
   }
-  epos_hardware::EposHardware robot(nh, pnh, motor_names);
-  controller_manager::ControllerManager cm(&robot, nh);
 
-  ros::AsyncSpinner spinner(1);
-  spinner.start();
-
-  ROS_INFO("Initializing Motors");
-  if (!robot.init()) {
+  epos_hardware::EposHardware hardware;
+  if (!hardware.init(nh, pnh, motor_names)) {
     ROS_FATAL("Failed to initialize motors");
     return 1;
   }
   ROS_INFO("Motors Initialized");
 
-  ros::Rate controller_rate(50);
-  ros::Time last = ros::Time::now();
+  controller_manager::ControllerManager controllers(&hardware, nh);
+  ros::AsyncSpinner spinner(1);
+  spinner.start();
+
+  ros::Rate control_rate(50);
+  ros::Time last(ros::Time::now());
   while (ros::ok()) {
-    robot.read();
-    ros::Time now = ros::Time::now();
-    cm.update(now, now - last);
-    robot.write();
+    const ros::Time now(ros::Time::now());
+    const ros::Duration period(now - last);
+    hardware.read(now, period);
+    controllers.update(now, period);
+    hardware.write(now, period);
+    hardware.updateDiagnostics();
     last = now;
-    robot.updateDiagnostics();
-    controller_rate.sleep();
+    control_rate.sleep();
   }
 }

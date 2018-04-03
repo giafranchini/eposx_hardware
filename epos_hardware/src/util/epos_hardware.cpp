@@ -1,108 +1,209 @@
-#include "epos_hardware/epos_hardware.h"
+#include <set>
+#include <stdexcept>
+
+#include <epos_hardware/epos_hardware.h>
+#include <epos_hardware/utils.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
+#include <joint_limits_interface/joint_limits_urdf.h>
+#include <ros/console.h>
+#include <urdf/model.h>
+
 #include <boost/foreach.hpp>
 
 namespace epos_hardware {
 
-EposHardware::EposHardware(ros::NodeHandle &nh, ros::NodeHandle &pnh,
-                           const std::vector< std::string > &motor_names)
-    : epos_manager_(nh, pnh, motor_names, asi, avi, api, aei, bsi) {
+EposHardware::EposHardware() {}
 
-  registerInterface(&asi);
-  registerInterface(&avi);
-  registerInterface(&api);
-  registerInterface(&aei);
-  registerInterface(&bsi);
+EposHardware::~EposHardware() {}
 
+//
+// init()
+//
+
+bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
+                        const std::vector< std::string > &motor_names) {
   try {
-    transmission_loader.reset(
-        new transmission_interface::TransmissionInterfaceLoader(this, &robot_transmissions));
-  } catch (const std::invalid_argument &ex) {
-    ROS_ERROR_STREAM("Failed to create transmission interface loader. " << ex.what());
-    return;
-  } catch (const pluginlib::LibraryLoadException &ex) {
-    ROS_ERROR_STREAM("Failed to create transmission interface loader. " << ex.what());
-    return;
-  } catch (...) {
-    ROS_ERROR_STREAM("Failed to create transmission interface loader. ");
-    return;
+    initLowLevelInterfaces();
+    initMotors(root_nh, hw_nh, motor_names);
+    initTransmissions(root_nh);
+    initJointLimits(root_nh);
+  } catch (const std::exception &error) {
+    ROS_ERROR_STREAM(error.what());
+    return false;
   }
+  return true;
+}
 
-  std::string urdf_string;
-  nh.getParam("robot_description", urdf_string);
-  while (urdf_string.empty() && ros::ok()) {
+void EposHardware::initLowLevelInterfaces() {
+  registerInterface(&ator_state_iface_);
+  registerInterface(&pos_ator_iface_);
+  registerInterface(&vel_ator_iface_);
+  registerInterface(&eff_ator_iface_);
+  registerInterface(&bat_state_iface_);
+  registerInterface(&epos_diag_iface_);
+}
+
+void EposHardware::initMotors(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
+                              const std::vector< std::string > &motor_names) {
+  // register state/command/diagnostic handles to hardware interfaces
+  // and configure motors
+  epos_manager_.init(*this, root_nh, hw_nh, motor_names);
+}
+
+// helper function to populate actuator names registered in interfaces
+template < typename ActuatorInterface >
+void insertNames(std::set< std::string > &names, const ActuatorInterface &ator_iface) {
+  const std::vector< std::string > new_names(ator_iface.getNames());
+  names.insert(new_names.begin(), new_names.end());
+}
+
+void EposHardware::initTransmissions(ros::NodeHandle &root_nh) {
+  // wait for URDF which contains transmission information
+  std::string urdf_str;
+  root_nh.getParam("robot_description", urdf_str);
+  while (urdf_str.empty() && ros::ok()) {
     ROS_INFO_STREAM_ONCE("Waiting for robot_description");
-    nh.getParam("robot_description", urdf_string);
+    root_nh.getParam("robot_description", urdf_str);
     ros::Duration(0.1).sleep();
   }
 
-  transmission_interface::TransmissionParser parser;
-  std::vector< transmission_interface::TransmissionInfo > infos;
-  if (!parser.parse(urdf_string, infos)) {
-    ROS_ERROR("Error parsing URDF");
-    return;
+  // load transmission infomations from URDF
+  transmission_interface::TransmissionParser trans_parser;
+  std::vector< transmission_interface::TransmissionInfo > trans_infos;
+  if (!trans_parser.parse(urdf_str, trans_infos)) {
+    throw EposException("Failed to parse urdf");
   }
 
-  // build a list of all loaded actuator names
-  const std::vector< std::string > actuator_names(epos_manager_.motorNames());
+  // build a list of actuator names in this hardware
+  std::set< std::string > hw_ator_names;
+  insertNames(hw_ator_names, ator_state_iface_);
+  insertNames(hw_ator_names, pos_ator_iface_);
+  insertNames(hw_ator_names, vel_ator_iface_);
+  insertNames(hw_ator_names, eff_ator_iface_);
 
-  // Load all transmissions that are for the loaded motors
-  BOOST_FOREACH (const transmission_interface::TransmissionInfo &info, infos) {
-    // find loaded motors associated with the transmission
-    std::size_t n_found(0);
-    BOOST_FOREACH (const transmission_interface::ActuatorInfo &actuator, info.actuators_) {
-      if (std::find(actuator_names.begin(), actuator_names.end(), actuator.name_) !=
-          actuator_names.end()) {
-        ++n_found;
+  // load all transmissions that are for the motors in this hardware
+  trans_iface_loader_.reset(
+      new transmission_interface::TransmissionInterfaceLoader(this, &robot_trans_));
+  BOOST_FOREACH (const transmission_interface::TransmissionInfo &trans_info, trans_infos) {
+    // check the transmission is for some of actuators in this hardware
+    bool trans_has_non_epos_ator(false);
+    BOOST_FOREACH (const transmission_interface::ActuatorInfo &trans_ator, trans_info.actuators_) {
+      if (hw_ator_names.count(trans_ator.name_) == 0) {
+        trans_has_non_epos_ator = true;
+        break;
       }
     }
-    // no motors for the transmission found. skip.
-    if (n_found == 0) {
+    if (trans_has_non_epos_ator) {
+      ROS_INFO_STREAM("Skip loading " << trans_info.name_ << " because it has non epos actuator");
       continue;
     }
-    // some motors for the transmission found. not supported.
-    if (n_found < info.actuators_.size()) {
-      ROS_ERROR_STREAM(
-          "Do not support transmissions that contain only some EPOS actuators: " << info.name_);
-      continue;
+    // load the transmission
+    if (!trans_iface_loader_->load(trans_info)) {
+      throw EposException("Failed to load " + trans_info.name_);
     }
-    // all motors for the transmission found. try load the transmission.
-    if (!transmission_loader->load(info)) {
-      ROS_ERROR_STREAM("Error loading transmission: " << info.name_);
-      return;
-    }
-    ROS_INFO_STREAM("Loaded transmission: " << info.name_);
+    ROS_INFO_STREAM("Loaded transmission: " << trans_info.name_);
   }
 }
 
-bool EposHardware::init() { return epos_manager_.init(); }
+// register commnad saturation handles to the saturation interface.
+// each handle corresponds to a command handle in the command interface.
+// each handle is initialized by the URDF description if possible.
+template < typename SaturationHandle, typename CommandInterface, typename SaturationInterface >
+void registerHandles(CommandInterface &cmd_iface, SaturationInterface &sat_iface,
+                     const urdf::Model &urdf_model) {
+  const std::vector< std::string > jnt_names(cmd_iface.getNames());
+  BOOST_FOREACH (const std::string &jnt_name, jnt_names) {
+    joint_limits_interface::JointLimits jnt_limits;
+    joint_limits_interface::getJointLimits(
+        urdf_model.getJoint(jnt_name) /* this is ptr. null is ok */, jnt_limits);
+    sat_iface.registerHandle(SaturationHandle(cmd_iface.getHandle(jnt_name), jnt_limits));
+  }
+}
+
+void EposHardware::initJointLimits(ros::NodeHandle &root_nh) {
+  // make sure joint command data is available
+  if (!trans_iface_loader_) {
+    throw EposException("Null transmission loader");
+  }
+  transmission_interface::TransmissionLoaderData *const trans_loader_data(
+      trans_iface_loader_->getData());
+  if (!trans_loader_data) {
+    throw EposException("Null transmission loader data");
+  }
+
+  // load URDF model which contains joint limits information
+  urdf::Model urdf_model;
+  if (!urdf_model.initParamWithNodeHandle("robot_description", root_nh)) {
+    throw EposException("Failed to init URDF model");
+  }
+
+  // register all possible joint limits
+  transmission_interface::JointInterfaces &jnt_ifaces(trans_loader_data->joint_interfaces);
+  registerHandles< joint_limits_interface::PositionJointSaturationHandle >(
+      jnt_ifaces.position_joint_interface, pos_jnt_sat_iface_, urdf_model);
+  registerHandles< joint_limits_interface::VelocityJointSaturationHandle >(
+      jnt_ifaces.velocity_joint_interface, vel_jnt_sat_iface_, urdf_model);
+  registerHandles< joint_limits_interface::EffortJointSaturationHandle >(
+      jnt_ifaces.effort_joint_interface, eff_jnt_sat_iface_, urdf_model);
+}
+
+//
+// doSwitch()
+//
 
 void EposHardware::doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                             const std::list< hardware_interface::ControllerInfo > &stop_list) {
   epos_manager_.doSwitch(start_list, stop_list);
 }
 
-void EposHardware::read() {
-  epos_manager_.read();
-  if (robot_transmissions.get< transmission_interface::ActuatorToJointStateInterface >()) {
-    robot_transmissions.get< transmission_interface::ActuatorToJointStateInterface >()->propagate();
+//
+// read()
+//
+
+// helper function to propagate between joint and actuator states/commands
+template < typename BridgeInterface >
+void propagate(transmission_interface::RobotTransmissions &robot_trans) {
+  BridgeInterface *const bridge_iface(robot_trans.get< BridgeInterface >());
+  if (bridge_iface) {
+    bridge_iface->propagate();
   }
 }
 
-void EposHardware::write() {
-  if (robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >()) {
-    robot_transmissions.get< transmission_interface::JointToActuatorVelocityInterface >()
-        ->propagate();
-  }
-  if (robot_transmissions.get< transmission_interface::JointToActuatorPositionInterface >()) {
-    robot_transmissions.get< transmission_interface::JointToActuatorPositionInterface >()
-        ->propagate();
-  }
-  if (robot_transmissions.get< transmission_interface::JointToActuatorEffortInterface >()) {
-    robot_transmissions.get< transmission_interface::JointToActuatorEffortInterface >()
-        ->propagate();
-  }
+void EposHardware::read(const ros::Time &time, const ros::Duration &period) {
+  // read actutor states
+  epos_manager_.read();
+
+  // update joint stats by actuator states
+  propagate< transmission_interface::ActuatorToJointStateInterface >(robot_trans_);
+}
+
+//
+// write()
+//
+
+void EposHardware::write(const ros::Time &time, const ros::Duration &period) {
+  // TODO: update joint limit from parameter server
+  //       (must be fast. use cache or fetch in background)
+
+  // saturate joint commands
+  pos_jnt_sat_iface_.enforceLimits(period);
+  vel_jnt_sat_iface_.enforceLimits(period);
+  eff_jnt_sat_iface_.enforceLimits(period);
+
+  // update actuator commands by joint commands
+  propagate< transmission_interface::JointToActuatorVelocityInterface >(robot_trans_);
+  propagate< transmission_interface::JointToActuatorPositionInterface >(robot_trans_);
+  propagate< transmission_interface::JointToActuatorEffortInterface >(robot_trans_);
+
+  // write actuator commands
   epos_manager_.write();
 }
+
+//
+// updateDiagnostics()
+//
 
 void EposHardware::updateDiagnostics() { epos_manager_.updateDiagnostics(); }
 

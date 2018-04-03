@@ -7,9 +7,11 @@ find_package(catkin REQUIRED COMPONENTS
   diagnostic_updater
   epos_library
   hardware_interface
+  joint_limits_interface
   roscpp
   sensor_msgs
   transmission_interface
+  urdf
 )
 
 find_package(Boost REQUIRED COMPONENTS
@@ -25,9 +27,11 @@ catkin_package(
   diagnostic_updater 
   epos_library 
   hardware_interface 
+  joint_limits_interface
   roscpp 
   sensor_msgs
   transmission_interface
+  urdf
 )
 
 ###########
@@ -65,8 +69,10 @@ target_link_libraries(get_state
 )
 
 add_library(epos_manager
-  src/util/epos.cpp
   src/util/epos_manager.cpp
+  src/util/epos.cpp
+  src/util/epos_operation_mode.cpp
+  src/util/epos_diagnostic_updater.cpp
 )
 target_link_libraries(epos_manager
   ${catkin_LIBRARIES}

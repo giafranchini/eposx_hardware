@@ -5,39 +5,32 @@
 #include <string>
 #include <vector>
 
-#include "epos_hardware/epos.h"
-#include "epos_hardware/utils.h"
-#include <battery_state_interface/battery_state_interface.hpp>
-#include <diagnostic_updater/diagnostic_updater.h>
-#include <hardware_interface/actuator_command_interface.h>
-#include <hardware_interface/actuator_state_interface.h>
+#include <epos_hardware/epos.h>
+#include <epos_hardware/epos_diagnostic_updater.h>
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
-#include <ros/ros.h>
-#include <transmission_interface/robot_transmissions.h>
-#include <transmission_interface/transmission_interface_loader.h>
+#include <ros/node_handle.h>
+
+#include <boost/shared_ptr.hpp>
 
 namespace epos_hardware {
 
 class EposManager {
 public:
-  EposManager(ros::NodeHandle &nh, ros::NodeHandle &pnh,
-              const std::vector< std::string > &motor_names,
-              hardware_interface::ActuatorStateInterface &asi,
-              hardware_interface::VelocityActuatorInterface &avi,
-              hardware_interface::PositionActuatorInterface &api,
-              hardware_interface::EffortActuatorInterface &aei,
-              battery_state_interface::BatteryStateInterface &bsi);
-  bool init();
+  EposManager();
+  virtual ~EposManager();
+
+  void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh, ros::NodeHandle &motors_nh,
+            const std::vector< std::string > &motor_names);
   void read();
   void write();
   void doSwitch(const std::list< hardware_interface::ControllerInfo > &start_list,
                 const std::list< hardware_interface::ControllerInfo > &stop_list);
   void updateDiagnostics();
-  std::vector< std::string > motorNames() const;
 
 private:
   std::vector< boost::shared_ptr< Epos > > motors_;
+  std::vector< boost::shared_ptr< EposDiagnosticUpdater > > diagnostic_updaters_;
 };
 
 } // namespace epos_hardware
