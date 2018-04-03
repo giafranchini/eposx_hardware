@@ -256,7 +256,7 @@ void EposCyclicSynchronoustTorqueMode::write() {
   } else {
     cmd = static_cast< boost::int16_t >(effort_cmd_);
   }
-  VCS_OBJ(SetObject, epos_handle_, 0x6971, 0x00, &cmd, 2);
+  VCS_OBJ(SetObject, epos_handle_, 0x6071, 0x00, &cmd, 2);
 }
 
 } // namespace epos_hardware
