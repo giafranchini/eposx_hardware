@@ -96,7 +96,7 @@ void EposDiagnosticUpdater::init(hardware_interface::RobotHW &hw, ros::NodeHandl
   rw_ros_units_ = motor_nh.param("rw_ros_units", false);
 
   // load motor params (are they required params for diagnostics??)
-  GET_PARAM_KV(motor_nh, "torque_contant", torque_constant_);
+  GET_PARAM_KV(motor_nh, "torque_constant", torque_constant_);
   GET_PARAM_KV(motor_nh, "motor/nominal_current", nominal_current_);
   GET_PARAM_KV(motor_nh, "motor/max_output_current", max_output_current_);
 
@@ -243,11 +243,11 @@ void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
   // add stat of state
   if (position_) {
     stat.add("Position",
-             boost::lexical_cast< std::string >(*position_) + (rw_ros_units_ ? "rad" : " qc"));
+             boost::lexical_cast< std::string >(*position_) + (rw_ros_units_ ? " rad" : " qc"));
   }
   if (velocity_) {
     stat.add("Velocity",
-             boost::lexical_cast< std::string >(*velocity_) + (rw_ros_units_ ? "rad/s" : " rpm"));
+             boost::lexical_cast< std::string >(*velocity_) + (rw_ros_units_ ? " rad/s" : " rpm"));
   }
   if (effort_) {
     stat.add("Effort",
