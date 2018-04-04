@@ -237,6 +237,11 @@ void EposCyclicSynchronoustTorqueMode::init(hardware_interface::RobotHW &hw,
     boost::uint32_t data(torque_constant * 1000.);
     VCS_OBJ(SetObject, epos_handle_, 0x3001, 0x05, &data, 4);
   }
+
+  // load motor-rated-torque
+  double nominal_current;
+  GET_PARAM_KV(motor_nh, "motor/nominal_current", nominal_current);
+  motor_rated_torque_ = nominal_current * torque_constant;
 }
 
 void EposCyclicSynchronoustTorqueMode::activate() { VCS_NN(SetOperationMode, epos_handle_, 10); }
@@ -251,10 +256,11 @@ void EposCyclicSynchronoustTorqueMode::write() {
 
   boost::int16_t cmd;
   if (rw_ros_units_) {
-    // Nm -> mNm
-    cmd = static_cast< boost::int16_t >(effort_cmd_ * 1000.);
+    // Nm -> mNm -> per mille of motor rated torque
+    cmd = static_cast< boost::int16_t >(effort_cmd_ * 1000. / motor_rated_torque_ * 1000.);
   } else {
-    cmd = static_cast< boost::int16_t >(effort_cmd_);
+    // mNm -> per mille of motor rated torque
+    cmd = static_cast< boost::int16_t >(effort_cmd_ / motor_rated_torque_ * 1000.);
   }
   VCS_OBJ(SetObject, epos_handle_, 0x6071, 0x00, &cmd, 2);
 }
