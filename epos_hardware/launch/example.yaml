@@ -8,8 +8,6 @@ test_joint_motor:
   node_id: 1 # default: 0 (any node id)
   serial_number: '682129001106' # epos's serial number in hex (default: '0' (any number))
 
-  torque_constant: 7.75 # [mNm/A]
-
   # general parameters (optional)
   clear_faults: true # clear faults recorded in epos on startup (default: false)
   rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in hardware interfaces
@@ -27,6 +25,7 @@ test_joint_motor:
     type: 10 # 1: DC, 10: EC sinus, 11: EC block
     nominal_current: 6.59 # [A]
     max_output_current: 7.0 # [A]
+    torque_constant: 7.75 # [mNm/A]
     thermal_time_constant: 4.92 # thermal time constant of motor widing [s]
     number_of_pole_pairs: 1 # EC only
 

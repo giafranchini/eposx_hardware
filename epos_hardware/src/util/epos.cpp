@@ -418,7 +418,7 @@ void Epos::initDeviceError(ros::NodeHandle &motor_nh) {
 
 void Epos::initMiscParameters(ros::NodeHandle &motor_nh) {
   // constant whose unit is mNm/A
-  GET_PARAM_KV(motor_nh, "torque_constant", torque_constant_);
+  GET_PARAM_KV(motor_nh, "motor/torque_constant", torque_constant_);
 
   // unit of outgoing states
   motor_nh.param("rw_ros_units", rw_ros_units_, false);

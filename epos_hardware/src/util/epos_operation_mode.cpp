@@ -187,7 +187,7 @@ void EposCurrentMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &mot
   rw_ros_units_ = motor_nh.param("rw_ros_units", false);
 
   // torque-current constant for unit conversion
-  GET_PARAM_KV(motor_nh, "torque_constant", torque_constant_);
+  GET_PARAM_KV(motor_nh, "motor/torque_constant", torque_constant_);
 }
 
 void EposCurrentMode::activate() { VCS_N0(ActivateCurrentMode, epos_handle_); }
@@ -234,7 +234,7 @@ void EposCyclicSynchronoustTorqueMode::init(hardware_interface::RobotHW &hw,
 
   // set torque constant for unit conversion in epos
   double torque_constant;
-  GET_PARAM_V(motor_nh, torque_constant);
+  GET_PARAM_KV(motor_nh, "motor/torque_constant", torque_constant);
   {
     // mAm/A -> uAm/A
     boost::uint32_t data(torque_constant * 1000.);
