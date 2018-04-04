@@ -22,6 +22,7 @@
     <joint name="test_joint">
       <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
       <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="test_joint_motor">
       <mechanicalReduction>190</mechanicalReduction>
