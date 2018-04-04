@@ -95,7 +95,10 @@ void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
   }
 }
 
-void EposProfilePositionMode::activate() { VCS_N0(ActivateProfilePositionMode, epos_handle_); }
+void EposProfilePositionMode::activate() {
+  // TODO: get & reset command saturation handle
+  VCS_N0(ActivateProfilePositionMode, epos_handle_);
+}
 
 void EposProfilePositionMode::read() { /* nothing to do */
 }
