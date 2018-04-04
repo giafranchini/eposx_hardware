@@ -138,7 +138,7 @@ void Epos::initOperationMode(hardware_interface::RobotHW &hw, ros::NodeHandle &m
       mode.reset(new EposProfileVelocityMode());
     } else if (str_pair.second == "current") {
       mode.reset(new EposCurrentMode());
-    } else if (false /*str_pair.second == "cyclic_synchronoust_torque"*/) {
+    } else if (str_pair.second == "cyclic_synchronoust_torque") {
       mode.reset(new EposCyclicSynchronoustTorqueMode());
     } else {
       throw EposException("Unsupported operation mode (" + str_pair.second + ")");

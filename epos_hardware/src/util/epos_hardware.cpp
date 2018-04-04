@@ -24,11 +24,13 @@ EposHardware::~EposHardware() {}
 
 bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
                         const std::vector< std::string > &motor_names) {
+  root_nh_ = root_nh;
+
   try {
     initLowLevelInterfaces();
-    initMotors(root_nh, hw_nh, motor_names);
-    initTransmissions(root_nh);
-    initJointLimits(root_nh);
+    initMotors(hw_nh, motor_names);
+    initTransmissions();
+    initJointLimits();
   } catch (const std::exception &error) {
     ROS_ERROR_STREAM(error.what());
     return false;
@@ -45,11 +47,11 @@ void EposHardware::initLowLevelInterfaces() {
   registerInterface(&epos_diag_iface_);
 }
 
-void EposHardware::initMotors(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
+void EposHardware::initMotors(ros::NodeHandle &hw_nh,
                               const std::vector< std::string > &motor_names) {
   // register state/command/diagnostic handles to hardware interfaces
   // and configure motors
-  epos_manager_.init(*this, root_nh, hw_nh, motor_names);
+  epos_manager_.init(*this, root_nh_, hw_nh, motor_names);
 }
 
 // helper function to populate actuator names registered in interfaces
@@ -59,13 +61,13 @@ void insertNames(std::set< std::string > &names, const ActuatorInterface &ator_i
   names.insert(new_names.begin(), new_names.end());
 }
 
-void EposHardware::initTransmissions(ros::NodeHandle &root_nh) {
+void EposHardware::initTransmissions() {
   // wait for URDF which contains transmission information
   std::string urdf_str;
-  root_nh.getParam("robot_description", urdf_str);
+  root_nh_.getParam("robot_description", urdf_str);
   while (urdf_str.empty() && ros::ok()) {
     ROS_INFO_STREAM_ONCE("Waiting for robot_description");
-    root_nh.getParam("robot_description", urdf_str);
+    root_nh_.getParam("robot_description", urdf_str);
     ros::Duration(0.1).sleep();
   }
 
@@ -122,7 +124,7 @@ void registerHandles(CommandInterface &cmd_iface, SaturationInterface &sat_iface
   }
 }
 
-void EposHardware::initJointLimits(ros::NodeHandle &root_nh) {
+void EposHardware::initJointLimits() {
   // make sure joint command data is available
   if (!trans_iface_loader_) {
     throw EposException("Null transmission loader");
@@ -135,18 +137,23 @@ void EposHardware::initJointLimits(ros::NodeHandle &root_nh) {
 
   // load URDF model which contains joint limits information
   urdf::Model urdf_model;
-  if (!urdf_model.initParamWithNodeHandle("robot_description", root_nh)) {
+  if (!urdf_model.initParamWithNodeHandle("robot_description", root_nh_)) {
     throw EposException("Failed to init URDF model");
   }
 
-  // register all possible joint limits
+  // initialize limits by URDF & register all possible joint limits
   transmission_interface::JointInterfaces &jnt_ifaces(trans_loader_data->joint_interfaces);
-  registerHandles< joint_limits_interface::PositionJointSaturationHandle >(
+  registerHandles< dynamic_joint_limits_interface::DynamicPositionJointSaturationHandle >(
       jnt_ifaces.position_joint_interface, pos_jnt_sat_iface_, urdf_model);
-  registerHandles< joint_limits_interface::VelocityJointSaturationHandle >(
+  registerHandles< dynamic_joint_limits_interface::DynamicVelocityJointSaturationHandle >(
       jnt_ifaces.velocity_joint_interface, vel_jnt_sat_iface_, urdf_model);
-  registerHandles< joint_limits_interface::EffortJointSaturationHandle >(
+  registerHandles< dynamic_joint_limits_interface::DynamicEffortJointSaturationHandle >(
       jnt_ifaces.effort_joint_interface, eff_jnt_sat_iface_, urdf_model);
+
+  // do first update of limits which performs blocking access to the parameter server
+  pos_jnt_sat_iface_.updateLimits(root_nh_);
+  vel_jnt_sat_iface_.updateLimits(root_nh_);
+  eff_jnt_sat_iface_.updateLimits(root_nh_);
 }
 
 //
@@ -184,8 +191,10 @@ void EposHardware::read(const ros::Time &time, const ros::Duration &period) {
 //
 
 void EposHardware::write(const ros::Time &time, const ros::Duration &period) {
-  // TODO: update joint limit from parameter server
-  //       (must be fast. use cache or fetch in background)
+  // update limits with cached parameters subscribed in background
+  pos_jnt_sat_iface_.updateLimits(root_nh_);
+  vel_jnt_sat_iface_.updateLimits(root_nh_);
+  eff_jnt_sat_iface_.updateLimits(root_nh_);
 
   // saturate joint commands
   pos_jnt_sat_iface_.enforceLimits(period);

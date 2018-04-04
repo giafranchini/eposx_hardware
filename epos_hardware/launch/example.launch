@@ -10,11 +10,11 @@
   <!-- -->
   <!-- contoller loader (ask epos_hardware to automatically start) -->
   <node name="controller_starter" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
-        args="battery_state_controller joint_state_controller position_controller"/>
+        args="battery_state_controller joint_state_controller effort_controller"/>
   <!-- -->
   <!-- controller loader (just load and not start) -->
  <node name="controller_loader" pkg="controller_manager" type="spawner" respawn="false" output="screen" 
-       args="--stopped velocity_controller"/>
+       args="--stopped position_controller velocity_controller"/>
   <!-- -->
   <!-- controller definitions -->
   <param name="battery_state_controller/type" value="battery_state_controller/BatteryStateController" />
@@ -25,5 +25,7 @@
   <param name="position_controller/joint" value="test_joint" />
   <param name="velocity_controller/type" value="velocity_controllers/JointVelocityController" />
   <param name="velocity_controller/joint" value="test_joint" />
+  <param name="effort_controller/type" value="effort_controllers/JointEffortController" />
+  <param name="effort_controller/joint" value="test_joint" />
   <!-- -->
 </launch>

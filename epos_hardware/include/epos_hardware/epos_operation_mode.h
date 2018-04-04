@@ -82,6 +82,7 @@ public:
 private:
   epos_hardware::NodeHandle epos_handle_;
   bool rw_ros_units_;
+  double motor_rated_torque_;
   double effort_cmd_;
 };
 

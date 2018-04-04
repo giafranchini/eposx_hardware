@@ -20,6 +20,7 @@ test_joint_motor:
   operation_mode_map: 
     'velocity_controller': 'profile_velocity'
     'position_controller': 'profile_position'
+    'effort_controller': 'cyclic_synchronoust_torque'
 
   # motor parameters (required)
   motor:
