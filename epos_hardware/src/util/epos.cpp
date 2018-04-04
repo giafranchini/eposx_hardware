@@ -38,6 +38,7 @@ void Epos::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
   initHardwareInterface(hw, motor_nh);
 
   initEposNodeHandle(motor_nh);
+  initProtocolStackSettings(motor_nh);
 
   VCS_N0(SetDisableState, epos_handle_);
 
@@ -96,8 +97,6 @@ void Epos::initEposNodeHandle(ros::NodeHandle &motor_nh) {
                                motor_nh.param< std::string >("port", ""));
   const unsigned short node_id(motor_nh.param("node_id", 0));
   const std::string serial_number_str(motor_nh.param< std::string >("serial_number", "0"));
-  const unsigned int baudrate(motor_nh.param("baudrate", 1000000));
-  const unsigned int timeout(motor_nh.param("timeout", 500));
 
   // serial number from string
   boost::uint64_t serial_number;
@@ -111,10 +110,33 @@ void Epos::initEposNodeHandle(ros::NodeHandle &motor_nh) {
 
   // create epos handle
   epos_handle_ = createNodeHandle(device_info, node_id, serial_number);
+}
 
-  // TODO: find better way to set protocol stack settings common between nodes on the same device
+void Epos::initProtocolStackSettings(ros::NodeHandle &motor_nh) {
+  // load optional settings
+  const unsigned int baudrate(motor_nh.param("baudrate", 0));
+  const unsigned int timeout(motor_nh.param("timeout", 0));
+  if (baudrate == 0 && timeout == 0) {
+    return;
+  }
+
+  // check if the node is the first one initialized in the device
+  if (epos_handle_.ptr.use_count() != 1) {
+    ROS_WARN_STREAM(
+        motor_nh.getNamespace()
+        << "/{baudrate,timeout} is ignored. "
+        << "Only the first-initialized node in a device can set protocol stack settings.");
+    return;
+  }
+
+  // apply settings
   if (baudrate > 0 && timeout > 0) {
     VCS(SetProtocolStackSettings, epos_handle_.ptr.get(), baudrate, timeout);
+  } else {
+    unsigned int current_baudrate, current_timeout;
+    VCS(GetProtocolStackSettings, epos_handle_.ptr.get(), &current_baudrate, &current_timeout);
+    VCS(SetProtocolStackSettings, epos_handle_.ptr.get(),
+        baudrate > 0 ? baudrate : current_baudrate, timeout > 0 ? timeout : current_timeout);
   }
 }
 
