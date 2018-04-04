@@ -17,9 +17,7 @@ int main(int argc, char *argv[]) {
   ros::NodeHandle pnh("~");
 
   std::vector< std::string > motor_names;
-  for (std::size_t i = 1; i < argc; ++i) {
-    motor_names.push_back(argv[i]);
-  }
+  ros::removeROSArgs(argc, argv, motor_names);
 
   epos_hardware::EposHardware hardware;
   if (!hardware.init(nh, pnh, motor_names)) {
