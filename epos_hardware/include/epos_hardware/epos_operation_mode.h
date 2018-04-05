@@ -1,6 +1,7 @@
 #ifndef EPOS_HARDWARE_EPOS_OPERATION_MODE_H
 #define EPOS_HARDWARE_EPOS_OPERATION_MODE_H
 
+#include <dynamic_joint_limits_interface/dynamic_joint_limits_interface.h>
 #include <epos_hardware/utils.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
@@ -35,6 +36,8 @@ public:
   virtual void write();
 
 private:
+  std::string motor_name_;
+  dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface *pos_sat_iface_;
   epos_hardware::NodeHandle epos_handle_;
   bool rw_ros_units_;
   int encoder_resolution_;

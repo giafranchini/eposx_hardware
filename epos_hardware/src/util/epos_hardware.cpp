@@ -27,7 +27,7 @@ bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
   root_nh_ = root_nh;
 
   try {
-    initLowLevelInterfaces();
+    initInterfaces();
     initMotors(hw_nh, motor_names);
     initTransmissions();
     initJointLimits();
@@ -38,13 +38,16 @@ bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
   return true;
 }
 
-void EposHardware::initLowLevelInterfaces() {
+void EposHardware::initInterfaces() {
   registerInterface(&ator_state_iface_);
   registerInterface(&pos_ator_iface_);
   registerInterface(&vel_ator_iface_);
   registerInterface(&eff_ator_iface_);
   registerInterface(&bat_state_iface_);
   registerInterface(&epos_diag_iface_);
+  registerInterface(&pos_jnt_sat_iface_);
+  registerInterface(&vel_jnt_sat_iface_);
+  registerInterface(&eff_jnt_sat_iface_);
 }
 
 void EposHardware::initMotors(ros::NodeHandle &hw_nh,
@@ -140,11 +143,6 @@ void EposHardware::initJointLimits() {
   if (!urdf_model.initParamWithNodeHandle("robot_description", root_nh_)) {
     throw EposException("Failed to init URDF model");
   }
-
-  // register limits interfaces
-  registerInterface(&pos_jnt_sat_iface_);
-  registerInterface(&vel_jnt_sat_iface_);
-  registerInterface(&eff_jnt_sat_iface_);
 
   // initialize limits by URDF & register all possible joint limits
   transmission_interface::JointInterfaces &jnt_ifaces(trans_loader_data->joint_interfaces);

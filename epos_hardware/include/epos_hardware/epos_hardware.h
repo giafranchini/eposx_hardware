@@ -38,7 +38,7 @@ public:
 
 private:
   // subfunctions for init()
-  void initLowLevelInterfaces();
+  void initInterfaces();
   void initMotors(ros::NodeHandle &hw_nh, const std::vector< std::string > &motor_names);
   void initTransmissions();
   void initJointLimits();

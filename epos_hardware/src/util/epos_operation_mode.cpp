@@ -61,6 +61,11 @@ void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
   // register position command handle
   registerHandleTo< hardware_interface::PositionActuatorInterface >(hw, motor_name, &position_cmd_);
 
+  // init objects required when the mode is activated
+  motor_name_ = motor_name;
+  pos_sat_iface_ =
+      hw.get< dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface >();
+
   // init epos handle
   epos_handle_ = epos_handle;
   const std::string device_name(getDeviceName(epos_handle_));
@@ -96,7 +101,11 @@ void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
 }
 
 void EposProfilePositionMode::activate() {
-  // TODO: get & reset command saturation handle
+  if (pos_sat_iface_) {
+    // reset command saturation handle because position version is stateful.
+    // we don't have to reset velocity & effort versions.
+    pos_sat_iface_->reset(motor_name_);
+  }
   VCS_N0(ActivateProfilePositionMode, epos_handle_);
 }
 
