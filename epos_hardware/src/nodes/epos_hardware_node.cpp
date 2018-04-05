@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
 
   std::vector< std::string > motor_names;
   ros::removeROSArgs(argc, argv, motor_names);
+  motor_names.erase(motor_names.begin()); // remove exec path
 
   epos_hardware::EposHardware hardware;
   if (!hardware.init(nh, pnh, motor_names)) {
