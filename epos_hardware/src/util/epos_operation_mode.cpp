@@ -46,36 +46,39 @@ void registerHandleTo(hardware_interface::RobotHW &hw, const std::string &motor_
       hardware_interface::ActuatorHandle(state_interface->getHandle(motor_name), command));
 }
 
-//
-// operation mode base
-//
+// helper function to load actuator-joint mappings from urdf
+std::vector< transmission_interface::TransmissionInfo >
+getTransmissionInfos(ros::NodeHandle &urdf_nh) {
+  static bool has_loaded(false);
+  static std::vector< transmission_interface::TransmissionInfo > trans_infos;
 
-EposOperationMode::EposOperationMode() {}
+  if (!has_loaded) {
+    // load urdf
+    std::string urdf_str;
+    urdf_nh.getParam("robot_description", urdf_str);
+    while (urdf_str.empty() && ros::ok()) {
+      ROS_INFO_STREAM_ONCE("Waiting for robot_description");
+      urdf_nh.getParam("robot_description", urdf_str);
+      ros::Duration(0.1).sleep();
+    }
 
-EposOperationMode::~EposOperationMode() {}
+    // load transmission infos which map joints and actuators from urdf
+    transmission_interface::TransmissionParser trans_parser;
+    has_loaded = trans_parser.parse(urdf_str, trans_infos);
+    if (!has_loaded) {
+      throw EposException("Failed to parse urdf");
+    }
+  }
 
-//
-// profile position mode
-//
+  return trans_infos;
+}
 
 // helper function to get joint names corresponding actuator name in urdf
 std::vector< std::string > getJointNames(ros::NodeHandle &urdf_nh,
                                          const std::string &actuator_name) {
-  // load urdf
-  std::string urdf_str;
-  urdf_nh.getParam("robot_description", urdf_str);
-  while (urdf_str.empty() && ros::ok()) {
-    ROS_INFO_STREAM_ONCE("Waiting for robot_description");
-    urdf_nh.getParam("robot_description", urdf_str);
-    ros::Duration(0.1).sleep();
-  }
-
-  // load transmission infos which map joints and actuators from urdf
-  transmission_interface::TransmissionParser trans_parser;
-  std::vector< transmission_interface::TransmissionInfo > trans_infos;
-  if (!trans_parser.parse(urdf_str, trans_infos)) {
-    throw EposException("Failed to parse urdf");
-  }
+  // get actuator-joint mappings
+  const std::vector< transmission_interface::TransmissionInfo > trans_infos(
+      getTransmissionInfos(urdf_nh));
 
   // pick names of joints related to the actuator
   std::vector< std::string > joint_names;
@@ -101,6 +104,18 @@ std::vector< std::string > getJointNames(ros::NodeHandle &urdf_nh,
 
   return joint_names;
 }
+
+//
+// operation mode base
+//
+
+EposOperationMode::EposOperationMode() {}
+
+EposOperationMode::~EposOperationMode() {}
+
+//
+// profile position mode
+//
 
 void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                                    ros::NodeHandle &motor_nh, const std::string &motor_name,
