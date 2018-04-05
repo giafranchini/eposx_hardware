@@ -141,6 +141,11 @@ void EposHardware::initJointLimits() {
     throw EposException("Failed to init URDF model");
   }
 
+  // register limits interfaces
+  registerInterface(&pos_jnt_sat_iface_);
+  registerInterface(&vel_jnt_sat_iface_);
+  registerInterface(&eff_jnt_sat_iface_);
+
   // initialize limits by URDF & register all possible joint limits
   transmission_interface::JointInterfaces &jnt_ifaces(trans_loader_data->joint_interfaces);
   registerHandles< dynamic_joint_limits_interface::DynamicPositionJointSaturationHandle >(
