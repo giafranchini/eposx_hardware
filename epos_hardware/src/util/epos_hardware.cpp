@@ -8,6 +8,7 @@
 #include <joint_limits_interface/joint_limits_rosparam.h>
 #include <joint_limits_interface/joint_limits_urdf.h>
 #include <ros/console.h>
+#include <transmission_interface/transmission_info.h>
 #include <urdf/model.h>
 
 #include <boost/foreach.hpp>
@@ -26,11 +27,20 @@ bool EposHardware::init(ros::NodeHandle &root_nh, ros::NodeHandle &hw_nh,
                         const std::vector< std::string > &motor_names) {
   root_nh_ = root_nh;
 
+  // wait for URDF which contains transmission and limits information
+  std::string urdf_str;
+  root_nh_.getParam("robot_description", urdf_str);
+  while (urdf_str.empty() && ros::ok()) {
+    ROS_INFO_STREAM_ONCE("Waiting for robot_description");
+    root_nh_.getParam("robot_description", urdf_str);
+    ros::Duration(0.1).sleep();
+  }
+
   try {
     initInterfaces();
     initMotors(hw_nh, motor_names);
-    initTransmissions();
-    initJointLimits();
+    initTransmissions(urdf_str);
+    initJointLimits(urdf_str);
   } catch (const std::exception &error) {
     ROS_ERROR_STREAM(error.what());
     return false;
@@ -64,16 +74,7 @@ void insertNames(std::set< std::string > &names, const ActuatorInterface &ator_i
   names.insert(new_names.begin(), new_names.end());
 }
 
-void EposHardware::initTransmissions() {
-  // wait for URDF which contains transmission information
-  std::string urdf_str;
-  root_nh_.getParam("robot_description", urdf_str);
-  while (urdf_str.empty() && ros::ok()) {
-    ROS_INFO_STREAM_ONCE("Waiting for robot_description");
-    root_nh_.getParam("robot_description", urdf_str);
-    ros::Duration(0.1).sleep();
-  }
-
+void EposHardware::initTransmissions(const std::string &urdf_str) {
   // load transmission infomations from URDF
   transmission_interface::TransmissionParser trans_parser;
   std::vector< transmission_interface::TransmissionInfo > trans_infos;
@@ -127,7 +128,7 @@ void registerHandles(CommandInterface &cmd_iface, SaturationInterface &sat_iface
   }
 }
 
-void EposHardware::initJointLimits() {
+void EposHardware::initJointLimits(const std::string &urdf_str) {
   // make sure joint command data is available
   if (!trans_iface_loader_) {
     throw EposException("Null transmission loader");
@@ -140,7 +141,7 @@ void EposHardware::initJointLimits() {
 
   // load URDF model which contains joint limits information
   urdf::Model urdf_model;
-  if (!urdf_model.initParamWithNodeHandle("robot_description", root_nh_)) {
+  if (!urdf_model.initString(urdf_str)) {
     throw EposException("Failed to init URDF model");
   }
 
