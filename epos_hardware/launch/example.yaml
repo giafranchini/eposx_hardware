@@ -8,6 +8,13 @@ test_joint_motor:
   node_id: 1 # default: 0 (any node id)
   serial_number: '682129001106' # epos's serial number in hex (default: '0' (any number))
 
+  # communication settings (optional)
+  # ignored if another node belonging to the same device is already initialized.
+  # 'device' is a set of types of device, protocol_stack, interface, and port.
+  # order of node initialization is that of commandline arguments.
+  baudrate: 1000000 # default: 0 (keep current baudrate)
+  timeout: 500 # [ms], default: 0 (keep current timeout)
+
   # general parameters (optional)
   clear_faults: true # clear faults recorded in epos on startup (default: false)
   rw_ros_units: true # use ros standard units (rad, rad/s, Nm) in hardware interfaces
