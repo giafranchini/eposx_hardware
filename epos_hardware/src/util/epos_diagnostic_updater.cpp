@@ -96,7 +96,7 @@ void EposDiagnosticUpdater::init(hardware_interface::RobotHW &hw, ros::NodeHandl
   rw_ros_units_ = motor_nh.param("rw_ros_units", false);
 
   // load motor params (are they required params for diagnostics??)
-  GET_PARAM_KV(motor_nh, "torque_constant", torque_constant_);
+  GET_PARAM_KV(motor_nh, "motor/torque_constant", torque_constant_);
   GET_PARAM_KV(motor_nh, "motor/nominal_current", nominal_current_);
   GET_PARAM_KV(motor_nh, "motor/max_output_current", max_output_current_);
 
