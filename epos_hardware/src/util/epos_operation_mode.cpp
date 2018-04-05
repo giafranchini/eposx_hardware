@@ -104,6 +104,7 @@ void EposProfilePositionMode::activate() {
   if (pos_sat_iface_) {
     // reset command saturation handle because position version is stateful.
     // we don't have to reset velocity & effort versions.
+    // TODO: known bug! following line should be reset(joint_name)
     pos_sat_iface_->reset(motor_name_);
   }
   VCS_N0(ActivateProfilePositionMode, epos_handle_);
