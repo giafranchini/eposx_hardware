@@ -35,7 +35,8 @@ private:
   void initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh);
   void initEposNodeHandle(ros::NodeHandle &motor_nh);
   void initProtocolStackSettings(ros::NodeHandle &motor_nh);
-  void initOperationMode(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh);
+  void initOperationMode(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                         ros::NodeHandle &motor_nh);
   void initFaultReaction(ros::NodeHandle &motor_nh);
   void initMotorParameter(ros::NodeHandle &motor_nh);
   void initSensorParameter(ros::NodeHandle &motor_nh);

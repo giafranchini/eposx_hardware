@@ -1,6 +1,9 @@
 #ifndef EPOS_HARDWARE_EPOS_OPERATION_MODE_H
 #define EPOS_HARDWARE_EPOS_OPERATION_MODE_H
 
+#include <string>
+#include <vector>
+
 #include <dynamic_joint_limits_interface/dynamic_joint_limits_interface.h>
 #include <epos_hardware/utils.h>
 #include <hardware_interface/robot_hw.h>
@@ -14,8 +17,9 @@ public:
   virtual ~EposOperationMode();
 
   // configure operation mode (e.g. register command handle or load parameters)
-  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                    const std::string &motor_name, epos_hardware::NodeHandle &epos_handle) = 0;
+  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                    ros::NodeHandle &motor_nh, const std::string &motor_name,
+                    epos_hardware::NodeHandle &epos_handle) = 0;
 
   // activate operation mode
   virtual void activate() = 0;
@@ -29,14 +33,15 @@ public:
 
 class EposProfilePositionMode : public EposOperationMode {
 public:
-  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                    const std::string &motor_name, epos_hardware::NodeHandle &epos_handle);
+  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                    ros::NodeHandle &motor_nh, const std::string &motor_name,
+                    epos_hardware::NodeHandle &epos_handle);
   virtual void activate();
   virtual void read();
   virtual void write();
 
 private:
-  std::string motor_name_;
+  std::vector< std::string > joint_names_;
   dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface *pos_sat_iface_;
   epos_hardware::NodeHandle epos_handle_;
   bool rw_ros_units_;
@@ -46,8 +51,9 @@ private:
 
 class EposProfileVelocityMode : public EposOperationMode {
 public:
-  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                    const std::string &motor_name, epos_hardware::NodeHandle &epos_handle);
+  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                    ros::NodeHandle &motor_nh, const std::string &motor_name,
+                    epos_hardware::NodeHandle &epos_handle);
   virtual void activate();
   virtual void read();
   virtual void write();
@@ -61,8 +67,9 @@ private:
 
 class EposCurrentMode : public EposOperationMode {
 public:
-  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                    const std::string &motor_name, epos_hardware::NodeHandle &epos_handle);
+  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                    ros::NodeHandle &motor_nh, const std::string &motor_name,
+                    epos_hardware::NodeHandle &epos_handle);
   virtual void activate();
   virtual void read();
   virtual void write();
@@ -76,8 +83,9 @@ private:
 
 class EposCyclicSynchronoustTorqueMode : public EposOperationMode {
 public:
-  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                    const std::string &motor_name, epos_hardware::NodeHandle &epos_handle);
+  virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                    ros::NodeHandle &motor_nh, const std::string &motor_name,
+                    epos_hardware::NodeHandle &epos_handle);
   virtual void activate();
   virtual void read();
   virtual void write();

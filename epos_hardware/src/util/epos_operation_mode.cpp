@@ -5,8 +5,11 @@
 #include <epos_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
+#include <transmission_interface/transmission_info.h>
+#include <transmission_interface/transmission_parser.h>
 
 #include <boost/core/demangle.hpp>
+#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/fpclassify.hpp> // for boost::math::isnan()
 
@@ -55,14 +58,58 @@ EposOperationMode::~EposOperationMode() {}
 // profile position mode
 //
 
-void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                                   const std::string &motor_name,
+// helper function to get joint names corresponding actuator name in urdf
+std::vector< std::string > getJointNames(ros::NodeHandle &urdf_nh,
+                                         const std::string &actuator_name) {
+  // load urdf
+  std::string urdf_str;
+  urdf_nh.getParam("robot_description", urdf_str);
+  while (urdf_str.empty() && ros::ok()) {
+    ROS_INFO_STREAM_ONCE("Waiting for robot_description");
+    urdf_nh.getParam("robot_description", urdf_str);
+    ros::Duration(0.1).sleep();
+  }
+
+  // load transmission infos which map joints and actuators from urdf
+  transmission_interface::TransmissionParser trans_parser;
+  std::vector< transmission_interface::TransmissionInfo > trans_infos;
+  if (!trans_parser.parse(urdf_str, trans_infos)) {
+    throw EposException("Failed to parse urdf");
+  }
+
+  // pick names of joints related to the actuator
+  std::vector< std::string > joint_names;
+  BOOST_FOREACH (const transmission_interface::TransmissionInfo &trans_info, trans_infos) {
+    bool has_actuator(false);
+    BOOST_FOREACH (const transmission_interface::ActuatorInfo &actuator_info,
+                   trans_info.actuators_) {
+      if (actuator_info.name_ == actuator_name) {
+        has_actuator = true;
+        break;
+      }
+    }
+    if (!has_actuator) {
+      continue;
+    }
+    BOOST_FOREACH (const transmission_interface::JointInfo &joint_info, trans_info.joints_) {
+      if (std::find(joint_names.begin(), joint_names.end(), joint_info.name_) ==
+          joint_names.end()) {
+        joint_names.push_back(joint_info.name_);
+      }
+    }
+  }
+
+  return joint_names;
+}
+
+void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                                   ros::NodeHandle &motor_nh, const std::string &motor_name,
                                    epos_hardware::NodeHandle &epos_handle) {
   // register position command handle
   registerHandleTo< hardware_interface::PositionActuatorInterface >(hw, motor_name, &position_cmd_);
 
   // init objects required when the mode is activated
-  motor_name_ = motor_name;
+  joint_names_ = getJointNames(root_nh, motor_name);
   pos_sat_iface_ =
       hw.get< dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface >();
 
@@ -104,8 +151,9 @@ void EposProfilePositionMode::activate() {
   if (pos_sat_iface_) {
     // reset command saturation handle because position version is stateful.
     // we don't have to reset velocity & effort versions.
-    // TODO: known bug! following line should be reset(joint_name)
-    pos_sat_iface_->reset(motor_name_);
+    BOOST_FOREACH (const std::string &joint_name, joint_names_) {
+      pos_sat_iface_->reset(joint_name);
+    }
   }
   VCS_N0(ActivateProfilePositionMode, epos_handle_);
 }
@@ -133,8 +181,8 @@ void EposProfilePositionMode::write() {
 // profile velocity mode
 //
 
-void EposProfileVelocityMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                                   const std::string &motor_name,
+void EposProfileVelocityMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                                   ros::NodeHandle &motor_nh, const std::string &motor_name,
                                    epos_hardware::NodeHandle &epos_handle) {
   // register velocity command handle
   registerHandleTo< hardware_interface::VelocityActuatorInterface >(hw, motor_name, &velocity_cmd_);
@@ -181,8 +229,9 @@ void EposProfileVelocityMode::write() {
 // current mode
 //
 
-void EposCurrentMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh,
-                           const std::string &motor_name, epos_hardware::NodeHandle &epos_handle) {
+void EposCurrentMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                           ros::NodeHandle &motor_nh, const std::string &motor_name,
+                           epos_hardware::NodeHandle &epos_handle) {
   // register effort command handle
   registerHandleTo< hardware_interface::EffortActuatorInterface >(hw, motor_name, &effort_cmd_);
 
@@ -226,7 +275,7 @@ void EposCurrentMode::write() {
 //
 
 void EposCyclicSynchronoustTorqueMode::init(hardware_interface::RobotHW &hw,
-                                            ros::NodeHandle &motor_nh,
+                                            ros::NodeHandle &root_nh, ros::NodeHandle &motor_nh,
                                             const std::string &motor_name,
                                             epos_hardware::NodeHandle &epos_handle) {
   // register effort command handle

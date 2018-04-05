@@ -42,7 +42,7 @@ void Epos::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
 
   VCS_N0(SetDisableState, epos_handle_);
 
-  initOperationMode(hw, motor_nh);
+  initOperationMode(hw, root_nh, motor_nh);
   initFaultReaction(motor_nh);
   initMotorParameter(motor_nh);
   initSensorParameter(motor_nh);
@@ -140,7 +140,8 @@ void Epos::initProtocolStackSettings(ros::NodeHandle &motor_nh) {
   }
 }
 
-void Epos::initOperationMode(hardware_interface::RobotHW &hw, ros::NodeHandle &motor_nh) {
+void Epos::initOperationMode(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
+                             ros::NodeHandle &motor_nh) {
   // load map from ros-controller name to epos's operation mode name
   typedef std::map< std::string, std::string > StrMap;
   StrMap str_map;
@@ -165,7 +166,7 @@ void Epos::initOperationMode(hardware_interface::RobotHW &hw, ros::NodeHandle &m
     } else {
       throw EposException("Unsupported operation mode (" + str_pair.second + ")");
     }
-    mode->init(hw, motor_nh, motor_name_, epos_handle_);
+    mode->init(hw, root_nh, motor_nh, motor_name_, epos_handle_);
     ptr_map[str_pair.second] = mode;
   }
 
