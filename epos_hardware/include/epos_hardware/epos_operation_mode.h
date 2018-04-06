@@ -13,7 +13,6 @@ namespace epos_hardware {
 
 class EposOperationMode {
 public:
-  EposOperationMode();
   virtual ~EposOperationMode();
 
   // configure operation mode (e.g. register command handle or load parameters)
@@ -33,6 +32,8 @@ public:
 
 class EposProfilePositionMode : public EposOperationMode {
 public:
+  virtual ~EposProfilePositionMode();
+
   virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                     ros::NodeHandle &motor_nh, const std::string &motor_name,
                     epos_hardware::NodeHandle &epos_handle);
@@ -51,6 +52,8 @@ private:
 
 class EposProfileVelocityMode : public EposOperationMode {
 public:
+  virtual ~EposProfileVelocityMode();
+
   virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                     ros::NodeHandle &motor_nh, const std::string &motor_name,
                     epos_hardware::NodeHandle &epos_handle);
@@ -67,6 +70,8 @@ private:
 
 class EposCurrentMode : public EposOperationMode {
 public:
+  virtual ~EposCurrentMode();
+
   virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                     ros::NodeHandle &motor_nh, const std::string &motor_name,
                     epos_hardware::NodeHandle &epos_handle);
@@ -83,6 +88,8 @@ private:
 
 class EposCyclicSynchronoustTorqueMode : public EposOperationMode {
 public:
+  virtual ~EposCyclicSynchronoustTorqueMode();
+
   virtual void init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                     ros::NodeHandle &motor_nh, const std::string &motor_name,
                     epos_hardware::NodeHandle &epos_handle);

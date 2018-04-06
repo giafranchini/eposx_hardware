@@ -112,13 +112,13 @@ std::vector< std::string > getJointNames(ros::NodeHandle &urdf_nh,
 // operation mode base
 //
 
-EposOperationMode::EposOperationMode() {}
-
 EposOperationMode::~EposOperationMode() {}
 
 //
 // profile position mode
 //
+
+EposProfilePositionMode::~EposProfilePositionMode() {}
 
 void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                                    ros::NodeHandle &motor_nh, const std::string &motor_name,
@@ -199,6 +199,8 @@ void EposProfilePositionMode::write() {
 // profile velocity mode
 //
 
+EposProfileVelocityMode::~EposProfileVelocityMode() {}
+
 void EposProfileVelocityMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                                    ros::NodeHandle &motor_nh, const std::string &motor_name,
                                    epos_hardware::NodeHandle &epos_handle) {
@@ -247,6 +249,8 @@ void EposProfileVelocityMode::write() {
 // current mode
 //
 
+EposCurrentMode::~EposCurrentMode() {}
+
 void EposCurrentMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                            ros::NodeHandle &motor_nh, const std::string &motor_name,
                            epos_hardware::NodeHandle &epos_handle) {
@@ -291,6 +295,8 @@ void EposCurrentMode::write() {
 //
 // cyclic synchronoust torque mode
 //
+
+EposCyclicSynchronoustTorqueMode::~EposCyclicSynchronoustTorqueMode() {}
 
 void EposCyclicSynchronoustTorqueMode::init(hardware_interface::RobotHW &hw,
                                             ros::NodeHandle &root_nh, ros::NodeHandle &motor_nh,
