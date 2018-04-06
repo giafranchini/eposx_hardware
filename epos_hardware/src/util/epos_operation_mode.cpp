@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <typeinfo>
 
 #include <epos_hardware/epos_operation_mode.h>
@@ -11,7 +12,6 @@
 #include <boost/core/demangle.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/math/special_functions/fpclassify.hpp> // for boost::math::isnan()
 
 namespace epos_hardware {
 
@@ -180,7 +180,7 @@ void EposProfilePositionMode::read() { /* nothing to do */
 }
 
 void EposProfilePositionMode::write() {
-  if (boost::math::isnan(position_cmd_)) {
+  if (std::isnan(position_cmd_)) {
     return;
   }
 
@@ -225,7 +225,7 @@ void EposProfileVelocityMode::read() { /* nothing to do*/
 }
 
 void EposProfileVelocityMode::write() {
-  if (boost::math::isnan(velocity_cmd_)) {
+  if (std::isnan(velocity_cmd_)) {
     return;
   }
 
@@ -273,7 +273,7 @@ void EposCurrentMode::read() { /* nothing to do */
 }
 
 void EposCurrentMode::write() {
-  if (boost::math::isnan(effort_cmd_)) {
+  if (std::isnan(effort_cmd_)) {
     return;
   }
 
@@ -330,7 +330,7 @@ void EposCyclicSynchronoustTorqueMode::read() { /* nothing to do */
 }
 
 void EposCyclicSynchronoustTorqueMode::write() {
-  if (boost::math::isnan(effort_cmd_)) {
+  if (std::isnan(effort_cmd_)) {
     return;
   }
 
