@@ -49,10 +49,12 @@ void registerHandleTo(hardware_interface::RobotHW &hw, const std::string &motor_
 // helper function to load actuator-joint mappings from urdf
 std::vector< transmission_interface::TransmissionInfo >
 getTransmissionInfos(ros::NodeHandle &urdf_nh) {
-  static bool has_loaded(false);
-  static std::vector< transmission_interface::TransmissionInfo > trans_infos;
+  typedef std::vector< transmission_interface::TransmissionInfo > TransmissionInfos;
+  typedef std::map< std::string, TransmissionInfos > TransmissionInfosMap;
+  static TransmissionInfosMap trans_infos_map;
 
-  if (!has_loaded) {
+  const std::string urdf_ns(urdf_nh.getNamespace());
+  if (trans_infos_map.count(urdf_ns) == 0) {
     // load urdf
     std::string urdf_str;
     urdf_nh.getParam("robot_description", urdf_str);
@@ -64,13 +66,14 @@ getTransmissionInfos(ros::NodeHandle &urdf_nh) {
 
     // load transmission infos which map joints and actuators from urdf
     transmission_interface::TransmissionParser trans_parser;
-    has_loaded = trans_parser.parse(urdf_str, trans_infos);
-    if (!has_loaded) {
+    TransmissionInfos trans_infos;
+    if (!trans_parser.parse(urdf_str, trans_infos)) {
       throw EposException("Failed to parse urdf");
     }
+    trans_infos_map[urdf_ns] = trans_infos;
   }
 
-  return trans_infos;
+  return trans_infos_map[urdf_ns];
 }
 
 // helper function to get joint names corresponding actuator name in urdf
