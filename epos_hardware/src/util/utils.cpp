@@ -76,10 +76,10 @@ DeviceHandle::DeviceHandle(const DeviceInfo &device_info) : ptr(makePtr(device_i
 
 DeviceHandle::~DeviceHandle() {}
 
-// global storage of opened devices
-std::map< DeviceInfo, boost::weak_ptr< void >, LessDeviceInfo > existing_device_ptrs;
-
 boost::shared_ptr< void > DeviceHandle::makePtr(const DeviceInfo &device_info) {
+  // shared storage of opened devices
+  static std::map< DeviceInfo, boost::weak_ptr< void >, LessDeviceInfo > existing_device_ptrs;
+
   // try find an existing device
   const boost::shared_ptr< void > existing_device_ptr(existing_device_ptrs[device_info].lock());
   if (existing_device_ptr) {
