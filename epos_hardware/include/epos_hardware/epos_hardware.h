@@ -6,7 +6,7 @@
 #include <vector>
 
 #include <battery_state_interface/battery_state_interface.hpp>
-#include <dynamic_joint_limits_interface/dynamic_joint_limits_interface.h>
+#include <dynamic_joint_limits_interface/joint_limits_interface.h>
 #include <epos_hardware/epos_diagnostic_updater.h>
 #include <epos_hardware/epos_manager.h>
 #include <hardware_interface/actuator_command_interface.h>
@@ -59,9 +59,9 @@ private:
   boost::scoped_ptr< transmission_interface::TransmissionInterfaceLoader > trans_iface_loader_;
 
   // limits related to joint interfaces
-  dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface pos_jnt_sat_iface_;
-  dynamic_joint_limits_interface::DynamicVelocityJointSaturationInterface vel_jnt_sat_iface_;
-  dynamic_joint_limits_interface::DynamicEffortJointSaturationInterface eff_jnt_sat_iface_;
+  dynamic_joint_limits_interface::PositionJointSaturationInterface pos_jnt_sat_iface_;
+  dynamic_joint_limits_interface::VelocityJointSaturationInterface vel_jnt_sat_iface_;
+  dynamic_joint_limits_interface::EffortJointSaturationInterface eff_jnt_sat_iface_;
 
   // motor hardware
   EposManager epos_manager_;

@@ -147,11 +147,11 @@ void EposHardware::initJointLimits(const std::string &urdf_str) {
 
   // initialize limits by URDF & register all possible joint limits
   transmission_interface::JointInterfaces &jnt_ifaces(trans_loader_data->joint_interfaces);
-  registerHandles< dynamic_joint_limits_interface::DynamicPositionJointSaturationHandle >(
+  registerHandles< dynamic_joint_limits_interface::PositionJointSaturationHandle >(
       jnt_ifaces.position_joint_interface, pos_jnt_sat_iface_, urdf_model);
-  registerHandles< dynamic_joint_limits_interface::DynamicVelocityJointSaturationHandle >(
+  registerHandles< dynamic_joint_limits_interface::VelocityJointSaturationHandle >(
       jnt_ifaces.velocity_joint_interface, vel_jnt_sat_iface_, urdf_model);
-  registerHandles< dynamic_joint_limits_interface::DynamicEffortJointSaturationHandle >(
+  registerHandles< dynamic_joint_limits_interface::EffortJointSaturationHandle >(
       jnt_ifaces.effort_joint_interface, eff_jnt_sat_iface_, urdf_model);
 
   // do first update of limits which performs blocking access to the parameter server

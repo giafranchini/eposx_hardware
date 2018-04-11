@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <dynamic_joint_limits_interface/dynamic_joint_limits_interface.h>
+#include <dynamic_joint_limits_interface/joint_limits_interface.h>
 #include <epos_hardware/utils.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
@@ -43,7 +43,7 @@ public:
 
 private:
   std::vector< std::string > joint_names_;
-  dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface *pos_sat_iface_;
+  dynamic_joint_limits_interface::PositionJointSaturationInterface *pos_sat_iface_;
   epos_hardware::NodeHandle epos_handle_;
   bool rw_ros_units_;
   int encoder_resolution_;

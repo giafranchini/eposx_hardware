@@ -129,7 +129,7 @@ void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHan
   // init objects required when the mode is activated
   joint_names_ = getJointNames(root_nh, motor_name);
   pos_sat_iface_ =
-      hw.get< dynamic_joint_limits_interface::DynamicPositionJointSaturationInterface >();
+      hw.get< dynamic_joint_limits_interface::PositionJointSaturationInterface >();
 
   // init epos handle
   epos_handle_ = epos_handle;
