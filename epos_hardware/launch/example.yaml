@@ -61,7 +61,7 @@ test_joint_motor:
 
   # power supply parameters (optional)
   power_supply:
-    name: 'battery' # if not empty, a battery hardware interface will be registered
+    name: 'battery' # if this parameter exists, a battery hardware interface will be registered
     location: 'battery_slot' # corresponds BatteryState::location
     technology: 2 # corresponds BatteryState::power_supply_technology
     serial_number: 'unknown' # corresponds BatteryState::serial_number
