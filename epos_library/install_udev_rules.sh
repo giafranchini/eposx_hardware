@@ -4,7 +4,7 @@ echo ""
 echo "This script copies a udev rule for epos devices"
 echo ""
 
-sudo cp `rospack find epos_hardware`/{99-ftdi.rules,99-epos4.rules} /etc/udev/rules.d
+sudo cp `rospack find epos_library`/{99-ftdi.rules,99-epos4.rules} /etc/udev/rules.d
 
 
 echo ""
