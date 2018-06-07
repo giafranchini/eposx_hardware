@@ -56,7 +56,7 @@
 
 //Info
     HelpFunctions_DllExport int  VCS_GetDriverInfo(char* p_pszLibraryName, unsigned short p_usMaxLibraryNameStrSize,char* p_pszLibraryVersion, unsigned short p_usMaxLibraryVersionStrSize, unsigned int* p_pErrorCode);
-	HelpFunctions_DllExport int  VCS_GetVersion(void* KeyHandle, unsigned short NodeId, unsigned short* pHardwareVersion, unsigned short* pSoftwareVersion, unsigned short* pApplicationNumber, unsigned short* pApplicationVersion, unsigned int* pErrorCode);
+    HelpFunctions_DllExport int  VCS_GetVersion(void* KeyHandle, unsigned short NodeId, unsigned short* pHardwareVersion, unsigned short* pSoftwareVersion, unsigned short* pApplicationNumber, unsigned short* pApplicationVersion, unsigned int* pErrorCode);
     HelpFunctions_DllExport int  VCS_GetErrorInfo(unsigned int ErrorCodeValue, char* pErrorInfo, unsigned short MaxStrSize);
     
 //Advanced Functions
@@ -64,7 +64,7 @@
     HelpFunctions_DllExport int  VCS_GetProtocolStackNameSelection(char* DeviceName, int StartOfSelection, char* pProtocolStackNameSel, unsigned short MaxStrSize, int* pEndOfSelection, unsigned int* pErrorCode);
     HelpFunctions_DllExport int  VCS_GetInterfaceNameSelection(char* DeviceName, char* ProtocolStackName, int StartOfSelection, char* pInterfaceNameSel, unsigned short MaxStrSize, int* pEndOfSelection, unsigned int* pErrorCode);
     HelpFunctions_DllExport int  VCS_GetPortNameSelection(char* DeviceName, char* ProtocolStackName, char* InterfaceName, int StartOfSelection, char* pPortSel, unsigned short MaxStrSize, int* pEndOfSelection, unsigned int* pErrorCode);
-	HelpFunctions_DllExport int  VCS_ResetPortNameSelection(char* DeviceName, char* ProtocolStackName, char* InterfaceName, unsigned int* pErrorCode);
+    HelpFunctions_DllExport int  VCS_ResetPortNameSelection(char* DeviceName, char* ProtocolStackName, char* InterfaceName, unsigned int* pErrorCode);
     HelpFunctions_DllExport int  VCS_GetBaudrateSelection(char* DeviceName, char* ProtocolStackName, char* InterfaceName, char* PortName, int StartOfSelection, unsigned int* pBaudrateSel, int* pEndOfSelection, unsigned int* pErrorCode);
     HelpFunctions_DllExport int  VCS_GetKeyHandle(char* DeviceName, char* ProtocolStackName, char* InterfaceName, char* PortName, void** pKeyHandle, unsigned int* pErrorCode);
     HelpFunctions_DllExport int  VCS_GetDeviceName(void* KeyHandle, char* pDeviceName, unsigned short MaxStrSize, unsigned int* pErrorCode);
@@ -96,7 +96,7 @@
     Configuration_DllExport int  VCS_SetIncEncoderParameter(void* KeyHandle, unsigned short NodeId, unsigned int EncoderResolution, int InvertedPolarity, unsigned int* pErrorCode);
     Configuration_DllExport int  VCS_SetHallSensorParameter(void* KeyHandle, unsigned short NodeId, int InvertedPolarity, unsigned int* pErrorCode);
     Configuration_DllExport int  VCS_SetSsiAbsEncoderParameter(void* KeyHandle, unsigned short NodeId, unsigned short DataRate, unsigned short NbOfMultiTurnDataBits, unsigned short NbOfSingleTurnDataBits, int InvertedPolarity, unsigned int* pErrorCode);
-	Configuration_DllExport int  VCS_SetSsiAbsEncoderParameterEx(void* KeyHandle, unsigned short NodeId, unsigned short DataRate, unsigned short NbOfMultiTurnDataBits, unsigned short NbOfSingleTurnDataBits, unsigned short NbOfSpecialDataBits, int InvertedPolarity, unsigned short Timeout, unsigned short PowerupTime, unsigned int* pErrorCode);
+    Configuration_DllExport int  VCS_SetSsiAbsEncoderParameterEx(void* KeyHandle, unsigned short NodeId, unsigned short DataRate, unsigned short NbOfMultiTurnDataBits, unsigned short NbOfSingleTurnDataBits, unsigned short NbOfSpecialDataBits, int InvertedPolarity, unsigned short Timeout, unsigned short PowerupTime, unsigned int* pErrorCode);
     Configuration_DllExport int  VCS_GetSensorType(void* KeyHandle, unsigned short NodeId, unsigned short* pSensorType, unsigned int* pErrorCode);
     Configuration_DllExport int  VCS_GetIncEncoderParameter(void* KeyHandle, unsigned short NodeId, unsigned int* pEncoderResolution, int* pInvertedPolarity, unsigned int* pErrorCode);
     Configuration_DllExport int  VCS_GetHallSensorParameter(void* KeyHandle, unsigned short NodeId, int* pInvertedPolarity, unsigned int* pErrorCode);
@@ -196,8 +196,8 @@
 
 //Homing Mode
     HomingMode_DllExport int  VCS_ActivateHomingMode(void* KeyHandle, unsigned short NodeId, unsigned int* pErrorCode);
-    HomingMode_DllExport int  VCS_SetHomingParameter(void* KeyHandle, unsigned short NodeId, unsigned int HomingAcceleration, unsigned int SpeedSwitch, unsigned int SpeedIndex, int HomeOffset, unsigned short CurrentTreshold, int HomePosition, unsigned int* pErrorCode);
-    HomingMode_DllExport int  VCS_GetHomingParameter(void* KeyHandle, unsigned short NodeId, unsigned int* pHomingAcceleration, unsigned int* pSpeedSwitch, unsigned int* pSpeedIndex, int* pHomeOffset, unsigned short* pCurrentTreshold, int* pHomePosition, unsigned int* pErrorCode);
+    HomingMode_DllExport int  VCS_SetHomingParameter(void* KeyHandle, unsigned short NodeId, unsigned int HomingAcceleration, unsigned int SpeedSwitch, unsigned int SpeedIndex, int HomeOffset, unsigned short CurrentThreshold, int HomePosition, unsigned int* pErrorCode);
+    HomingMode_DllExport int  VCS_GetHomingParameter(void* KeyHandle, unsigned short NodeId, unsigned int* pHomingAcceleration, unsigned int* pSpeedSwitch, unsigned int* pSpeedIndex, int* pHomeOffset, unsigned short* pCurrentThreshold, int* pHomePosition, unsigned int* pErrorCode);
     HomingMode_DllExport int  VCS_FindHome(void* KeyHandle, unsigned short NodeId, signed char HomingMethod, unsigned int* pErrorCode);
     HomingMode_DllExport int  VCS_StopHoming(void* KeyHandle, unsigned short NodeId, unsigned int* pErrorCode);
     HomingMode_DllExport int  VCS_DefinePosition(void* KeyHandle, unsigned short NodeId, int HomePosition, unsigned int* pErrorCode);
@@ -298,11 +298,11 @@
 * TYPE DEFINITIONS
 *************************************************************************************************************************************/
 //Communication
-	//Dialog Mode
-	const int DM_PROGRESS_DLG					= 0;
-	const int DM_PROGRESS_AND_CONFIRM_DLG		= 1;
-	const int DM_CONFIRM_DLG					= 2;
-	const int DM_NO_DLG							= 3;
+    //Dialog Mode
+    const int DM_PROGRESS_DLG                   = 0;
+    const int DM_PROGRESS_AND_CONFIRM_DLG       = 1;
+    const int DM_CONFIRM_DLG                    = 2;
+    const int DM_NO_DLG                         = 3;
 
 //Configuration
     //MotorType
@@ -356,7 +356,7 @@
 
 //Units
     //VelocityDimension
-    const unsigned char VD_RPM                               = 0xA4;
+    const unsigned char VD_RPM                              = 0xA4;
 
     //VelocityNotation
     const signed char VN_STANDARD                          = 0;
@@ -440,5 +440,3 @@
     const unsigned short NCS_RESET_COMMUNICATION          = 130;
 
 #endif //_H_LINUX_EPOSCMD_
-
-
