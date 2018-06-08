@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(epos_hardware)
+project(eposx_hardware)
 
 find_package(catkin REQUIRED COMPONENTS
   battery_state_interface
   controller_manager
   diagnostic_updater
-  epos_library
+  eposx_library
   hardware_interface
   dynamic_joint_limits_interface
   roscpp
@@ -25,7 +25,7 @@ catkin_package(
   battery_state_interface 
   controller_manager 
   diagnostic_updater 
-  epos_library 
+  eposx_library 
   hardware_interface 
   dynamic_joint_limits_interface
   roscpp 

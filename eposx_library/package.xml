@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>epos_library</name>
+  <name>eposx_library</name>
   <version>0.0.3</version>
   <description>A catkin package that provides the EPOS Command Library</description>
 

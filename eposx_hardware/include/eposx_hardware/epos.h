@@ -1,13 +1,13 @@
-#ifndef EPOS_HARDWARE_EPOS_H_
-#define EPOS_HARDWARE_EPOS_H_
+#ifndef EPOSX_HARDWARE_EPOS_H_
+#define EPOSX_HARDWARE_EPOS_H_
 
 #include <list>
 #include <map>
 #include <string>
 #include <vector>
 
-#include <epos_hardware/epos_operation_mode.h>
-#include <epos_hardware/utils.h>
+#include <eposx_hardware/epos_operation_mode.h>
+#include <eposx_hardware/utils.h>
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
@@ -16,7 +16,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 class Epos {
 public:
@@ -60,7 +60,7 @@ private:
 
   std::string motor_name_;
 
-  epos_hardware::NodeHandle epos_handle_;
+  eposx_hardware::NodeHandle epos_handle_;
   OperationModeMap operation_mode_map_;
   OperationModePtr operation_mode_;
 
@@ -78,6 +78,6 @@ private:
   double torque_constant_;
   int encoder_resolution_;
 };
-} // namespace epos_hardware
+} // namespace eposx_hardware
 
 #endif

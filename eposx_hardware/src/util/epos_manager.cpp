@@ -1,8 +1,8 @@
-#include <epos_hardware/epos_manager.h>
+#include <eposx_hardware/epos_manager.h>
 
 #include <boost/foreach.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 EposManager::EposManager() {}
 
@@ -46,4 +46,4 @@ void EposManager::updateDiagnostics() {
   }
 }
 
-} // namespace epos_hardware
+} // namespace eposx_hardware

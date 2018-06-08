@@ -1,4 +1,4 @@
-#include "epos_hardware/utils.h"
+#include <eposx_hardware/utils.h>
 
 #include <ios>
 #include <map>
@@ -9,7 +9,7 @@
 
 #include <ros/console.h>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 //
 // EposException
@@ -353,4 +353,4 @@ boost::uint64_t getSerialNumber(const NodeHandle &node_handle) {
   return serial_number;
 }
 
-} // namespace epos_hardware
+} // namespace eposx_hardware

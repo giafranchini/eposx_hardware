@@ -1,8 +1,8 @@
 #include <ios>
 #include <sstream>
 
-#include <epos_hardware/epos_diagnostic_updater.h>
-#include <epos_hardware/utils.h>
+#include <eposx_hardware/epos_diagnostic_updater.h>
+#include <eposx_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 
@@ -10,7 +10,7 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 EposDiagnosticUpdater::EposDiagnosticUpdater() {}
 
@@ -271,4 +271,4 @@ void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
   }
 }
 
-} // namespace epos_hardware
+} // namespace eposx_hardware

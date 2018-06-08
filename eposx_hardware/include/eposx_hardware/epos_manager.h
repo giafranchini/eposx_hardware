@@ -1,19 +1,19 @@
-#ifndef EPOS_HARDWARE_EPOS_MANAGER_H_
-#define EPOS_HARDWARE_EPOS_MANAGER_H_
+#ifndef EPOSX_HARDWARE_EPOS_MANAGER_H_
+#define EPOSX_HARDWARE_EPOS_MANAGER_H_
 
 #include <list>
 #include <string>
 #include <vector>
 
-#include <epos_hardware/epos.h>
-#include <epos_hardware/epos_diagnostic_updater.h>
+#include <eposx_hardware/epos.h>
+#include <eposx_hardware/epos_diagnostic_updater.h>
 #include <hardware_interface/controller_info.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
 
 #include <boost/shared_ptr.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 class EposManager {
 public:
@@ -33,6 +33,6 @@ private:
   std::vector< boost::shared_ptr< EposDiagnosticUpdater > > diagnostic_updaters_;
 };
 
-} // namespace epos_hardware
+} // namespace eposx_hardware
 
 #endif

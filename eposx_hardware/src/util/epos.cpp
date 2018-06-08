@@ -4,8 +4,8 @@
 #include <typeinfo>
 
 #include <battery_state_interface/battery_state_interface.hpp>
-#include <epos_hardware/epos.h>
-#include <epos_hardware/epos_diagnostic_updater.h>
+#include <eposx_hardware/epos.h>
+#include <eposx_hardware/epos_diagnostic_updater.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 
@@ -15,7 +15,7 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 Epos::Epos() : position_(0), velocity_(0), effort_(0), current_(0) {}
 
@@ -555,4 +555,4 @@ void Epos::write() {
   }
 }
 
-} // namespace epos_hardware
+} // namespace eposx_hardware

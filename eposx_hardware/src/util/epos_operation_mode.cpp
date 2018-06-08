@@ -2,8 +2,8 @@
 #include <cmath>
 #include <typeinfo>
 
-#include <epos_hardware/epos_operation_mode.h>
-#include <epos_hardware/utils.h>
+#include <eposx_hardware/epos_operation_mode.h>
+#include <eposx_hardware/utils.h>
 #include <hardware_interface/actuator_command_interface.h>
 #include <hardware_interface/actuator_state_interface.h>
 #include <transmission_interface/transmission_info.h>
@@ -13,7 +13,7 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 //
 // util
@@ -122,14 +122,13 @@ EposProfilePositionMode::~EposProfilePositionMode() {}
 
 void EposProfilePositionMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                                    ros::NodeHandle &motor_nh, const std::string &motor_name,
-                                   epos_hardware::NodeHandle &epos_handle) {
+                                   eposx_hardware::NodeHandle &epos_handle) {
   // register position command handle
   registerHandleTo< hardware_interface::PositionActuatorInterface >(hw, motor_name, &position_cmd_);
 
   // init objects required when the mode is activated
   joint_names_ = getJointNames(root_nh, motor_name);
-  pos_sat_iface_ =
-      hw.get< dynamic_joint_limits_interface::PositionJointSaturationInterface >();
+  pos_sat_iface_ = hw.get< dynamic_joint_limits_interface::PositionJointSaturationInterface >();
 
   // init epos handle
   epos_handle_ = epos_handle;
@@ -203,7 +202,7 @@ EposProfileVelocityMode::~EposProfileVelocityMode() {}
 
 void EposProfileVelocityMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                                    ros::NodeHandle &motor_nh, const std::string &motor_name,
-                                   epos_hardware::NodeHandle &epos_handle) {
+                                   eposx_hardware::NodeHandle &epos_handle) {
   // register velocity command handle
   registerHandleTo< hardware_interface::VelocityActuatorInterface >(hw, motor_name, &velocity_cmd_);
 
@@ -253,7 +252,7 @@ EposCurrentMode::~EposCurrentMode() {}
 
 void EposCurrentMode::init(hardware_interface::RobotHW &hw, ros::NodeHandle &root_nh,
                            ros::NodeHandle &motor_nh, const std::string &motor_name,
-                           epos_hardware::NodeHandle &epos_handle) {
+                           eposx_hardware::NodeHandle &epos_handle) {
   // register effort command handle
   registerHandleTo< hardware_interface::EffortActuatorInterface >(hw, motor_name, &effort_cmd_);
 
@@ -301,7 +300,7 @@ EposCyclicSynchronoustTorqueMode::~EposCyclicSynchronoustTorqueMode() {}
 void EposCyclicSynchronoustTorqueMode::init(hardware_interface::RobotHW &hw,
                                             ros::NodeHandle &root_nh, ros::NodeHandle &motor_nh,
                                             const std::string &motor_name,
-                                            epos_hardware::NodeHandle &epos_handle) {
+                                            eposx_hardware::NodeHandle &epos_handle) {
   // register effort command handle
   registerHandleTo< hardware_interface::EffortActuatorInterface >(hw, motor_name, &effort_cmd_);
 
@@ -351,4 +350,4 @@ void EposCyclicSynchronoustTorqueMode::write() {
   VCS_OBJ(SetObject, epos_handle_, 0x6071, 0x00, &cmd, 2);
 }
 
-} // namespace epos_hardware
+} // namespace eposx_hardware

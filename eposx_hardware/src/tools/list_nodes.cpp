@@ -1,7 +1,7 @@
 #include <ios>
 #include <iostream>
 
-#include <epos_hardware/utils.h>
+#include <eposx_hardware/utils.h>
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -13,7 +13,7 @@
 #include <boost/program_options/value_semantic.hpp>
 #include <boost/program_options/variables_map.hpp>
 
-namespace eh = epos_hardware;
+namespace eh = eposx_hardware;
 namespace bpo = boost::program_options;
 
 // execute a given function in a try-catch barriar

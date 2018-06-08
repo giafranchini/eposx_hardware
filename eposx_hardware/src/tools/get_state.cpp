@@ -3,8 +3,8 @@
 #include <sstream>
 #include <string>
 
-#include <epos_hardware/utils.h>
-#include <epos_library/Definitions.h>
+#include <eposx_hardware/utils.h>
+#include <eposx_library/Definitions.h>
 
 #include <boost/cstdint.hpp>
 #include <boost/foreach.hpp>
@@ -15,7 +15,7 @@
 #include <boost/program_options/value_semantic.hpp>
 #include <boost/program_options/variables_map.hpp>
 
-namespace eh = epos_hardware;
+namespace eh = eposx_hardware;
 namespace bpo = boost::program_options;
 
 int main(int argc, char *argv[]) {

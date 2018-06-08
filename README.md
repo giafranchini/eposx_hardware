@@ -1,2 +1,2 @@
-epos_hardware
+eposx_hardware
 ============

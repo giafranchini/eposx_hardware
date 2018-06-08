@@ -2,7 +2,7 @@
 #include <vector>
 
 #include <controller_manager/controller_manager.h>
-#include <epos_hardware/epos_hardware.h>
+#include <eposx_hardware/epos_hardware.h>
 #include <ros/console.h>
 #include <ros/duration.h>
 #include <ros/init.h>
@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
   ros::removeROSArgs(argc, argv, motor_names);
   motor_names.erase(motor_names.begin()); // remove exec path
 
-  epos_hardware::EposHardware hardware;
+  eposx_hardware::EposHardware hardware;
   if (!hardware.init(nh, pnh, motor_names)) {
     ROS_FATAL("Failed to initialize motors");
     return 1;

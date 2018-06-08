@@ -1,12 +1,12 @@
-#ifndef EPOS_HARDWARE_EPOS_DIAGNOSTIC_UPDATER_H
-#define EPOS_HARDWARE_EPOS_DIAGNOSTIC_UPDATER_H
+#ifndef EPOSX_HARDWARE_EPOS_DIAGNOSTIC_UPDATER_H
+#define EPOSX_HARDWARE_EPOS_DIAGNOSTIC_UPDATER_H
 
 #include <string>
 #include <vector>
 
 #include <diagnostic_updater/DiagnosticStatusWrapper.h>
 #include <diagnostic_updater/diagnostic_updater.h>
-#include <epos_hardware/epos_operation_mode.h>
+#include <eposx_hardware/epos_operation_mode.h>
 #include <hardware_interface/internal/hardware_resource_manager.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/node_handle.h>
@@ -14,7 +14,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 class EposDiagnosticHandle {
 public:
@@ -73,6 +73,6 @@ private:
   const std::vector< unsigned int > *device_errors_;
 };
 
-} // namespace epos_hardware
+} // namespace eposx_hardware
 
 #endif

@@ -1,17 +1,17 @@
-#ifndef EPOS_HARDWARE_UTILS_H_
-#define EPOS_HARDWARE_UTILS_H_
+#ifndef EPOSX_HARDWARE_UTILS_H_
+#define EPOSX_HARDWARE_UTILS_H_
 
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <epos_library/Definitions.h>
+#include <eposx_library/Definitions.h>
 #include <ros/node_handle.h>
 
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 //
 // exception which this c++ wrapper may throw
@@ -161,7 +161,7 @@ NodeHandle createNodeHandle(const DeviceInfo &device_info, const unsigned short 
 
 boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
 
-} // namespace epos_hardware
+} // namespace eposx_hardware
 
 //
 // useful macros
@@ -175,21 +175,21 @@ boost::uint64_t getSerialNumber(const NodeHandle &node_handle);
   do {                                                                                             \
     unsigned int _error_code;                                                                      \
     if (VCS_##func(__VA_ARGS__, &_error_code) == VCS_FALSE) {                                      \
-      throw ::epos_hardware::EposException(#func, _error_code);                                    \
+      throw ::eposx_hardware::EposException(#func, _error_code);                                    \
     }                                                                                              \
   } while (false)
 
-// call a VCS_xxx function with epos_hardware::DeviceHandle or die
+// call a VCS_xxx function with eposx_hardware::DeviceHandle or die
 #define VCS_DN(func, epos_device_handle, ...) VCS(func, epos_device_handle.ptr.get(), __VA_ARGS__)
 
-// call a VCS_xxx function with epos_hardware::NodeHandle or die (no more arguments)
+// call a VCS_xxx function with eposx_hardware::NodeHandle or die (no more arguments)
 #define VCS_N0(func, epos_node_handle) VCS_DN(func, epos_node_handle, epos_node_handle.node_id)
 
-// call a VCS_xxx function with epos_hardware::NodeHandle or die
+// call a VCS_xxx function with eposx_hardware::NodeHandle or die
 #define VCS_NN(func, epos_node_handle, ...)                                                        \
   VCS_DN(func, epos_node_handle, epos_node_handle.node_id, __VA_ARGS__)
 
-// call a VCS_XxxObject function with epos_hardware::NodeHandle or die
+// call a VCS_XxxObject function with eposx_hardware::NodeHandle or die
 #define VCS_OBJ(func, epos_node_handle, index, subindex, data, length)                             \
   do {                                                                                             \
     unsigned int _bytes_transferred;                                                               \

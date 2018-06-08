@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(epos_library)
+project(eposx_library)
 
 find_package(catkin REQUIRED)
 

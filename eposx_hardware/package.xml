@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>epos_hardware</name>
+  <name>eposx_hardware</name>
   <version>0.0.2</version>
   <description>A wrapper around the EPOS Command Library to provide easy integration with ROS control</description>
 
@@ -16,7 +16,7 @@
   <build_depend>battery_state_interface</build_depend>
   <build_depend>controller_manager</build_depend>
   <build_depend>diagnostic_updater</build_depend>
-  <build_depend>epos_library</build_depend>
+  <build_depend>eposx_library</build_depend>
   <build_depend>hardware_interface</build_depend>
   <build_depend>dynamic_joint_limits_interface</build_depend>
   <build_depend>roscpp</build_depend>
@@ -26,7 +26,7 @@
   <run_depend>battery_state_interface</run_depend>
   <run_depend>controller_manager</run_depend>
   <run_depend>diagnostic_updater</run_depend>
-  <run_depend>epos_library</run_depend>
+  <run_depend>eposx_library</run_depend>
   <run_depend>hardware_interface</run_depend>
   <run_depend>dynamic_joint_limits_interface</run_depend>
   <run_depend>roscpp</run_depend>

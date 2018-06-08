@@ -1,8 +1,8 @@
 #include <set>
 #include <stdexcept>
 
-#include <epos_hardware/epos_hardware.h>
-#include <epos_hardware/utils.h>
+#include <eposx_hardware/epos_hardware.h>
+#include <eposx_hardware/utils.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <joint_limits_interface/joint_limits.h>
 #include <joint_limits_interface/joint_limits_rosparam.h>
@@ -13,7 +13,7 @@
 
 #include <boost/foreach.hpp>
 
-namespace epos_hardware {
+namespace eposx_hardware {
 
 EposHardware::EposHardware() {}
 
@@ -220,4 +220,4 @@ void EposHardware::write(const ros::Time &time, const ros::Duration &period) {
 
 void EposHardware::updateDiagnostics() { epos_manager_.updateDiagnostics(); }
 
-} // namespace epos_hardware
+} // namespace eposx_hardware
