@@ -4,13 +4,13 @@
   <version>0.0.2</version>
   <description>A wrapper around the EPOS Command Library to provide easy integration with ROS control</description>
 
-  <maintainer email="mwills@wpi.edu">Mitchell Wills</maintainer>
+  <maintainer email="okada@rm.is.tohoku.ac.jp">Yoshito Okada</maintainer>
 
   <license>BSD</license>
 
-  <url type="repository">https://github.com/RIVeR-Lab/epos_hardware</url>
+  <url type="repository">https://github.com/yoshito-n-students/eposx_hardware</url>
 
-  <author email="mwills@wpi.edu">Mitchell Wills</author>
+  <author email="okada@rm.is.tohoku.ac.jp">Yoshito Okada</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>battery_state_interface</build_depend>
