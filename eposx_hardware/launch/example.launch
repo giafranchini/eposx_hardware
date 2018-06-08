@@ -1,11 +1,11 @@
 <launch>
   <!-- -->
   <!-- definition of joints, actuators, transmissions -->
-  <param name="robot_description" textfile="$(find epos_hardware)/launch/example.urdf" />
+  <param name="robot_description" textfile="$(find eposx_hardware)/launch/example.urdf" />
   <!-- -->
   <!-- epos drivers and controllers -->
-  <node name="epos_hardware" pkg="epos_hardware" type="epos_hardware_node" args="test_joint_motor" output="screen">
-    <rosparam command="load" file="$(find epos_hardware)/launch/example.yaml" />
+  <node name="epos_hardware" pkg="eposx_hardware" type="epos_hardware_node" args="test_joint_motor" output="screen">
+    <rosparam command="load" file="$(find eposx_hardware)/launch/example.yaml" />
   </node>
   <!-- -->
   <!-- contoller loader (ask epos_hardware to automatically start) -->
