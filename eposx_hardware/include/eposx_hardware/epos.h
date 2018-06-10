@@ -69,7 +69,7 @@ private:
   double velocity_;
   double effort_;
   double current_;
-  sensor_msgs::BatteryState power_supply_state_;
+  sensor_msgs::BatteryStatePtr power_supply_state_;
   boost::int8_t operation_mode_display_;
   boost::uint16_t statusword_;
   std::vector< unsigned int > device_errors_;

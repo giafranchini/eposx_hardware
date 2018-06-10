@@ -84,8 +84,9 @@ void Epos::initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandl
   // if power_supply/name is given, additionally register power supply hardware
   std::string power_supply_name;
   if (motor_nh.getParam("power_supply/name", power_supply_name)) {
+    power_supply_state_.reset(new sensor_msgs::BatteryState);
     registerTo< bsi::BatteryStateInterface >(
-        hw, bsi::BatteryStateHandle(power_supply_name, &power_supply_state_));
+        hw, bsi::BatteryStateHandle(power_supply_name, power_supply_state_.get()));
   }
 }
 
@@ -425,11 +426,13 @@ void Epos::initMiscParameters(ros::NodeHandle &motor_nh) {
   motor_nh.param("rw_ros_units", rw_ros_units_, false);
 
   // constants in battery state
-  power_supply_state_.power_supply_technology = motor_nh.param< int >(
-      "power_supply/technology", sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN);
-  power_supply_state_.location = motor_nh.param< std::string >("power_supply/location", "");
-  power_supply_state_.serial_number =
-      motor_nh.param< std::string >("power_supply/serial_number", "");
+  if (power_supply_state_) {
+    power_supply_state_->power_supply_technology = motor_nh.param< int >(
+        "power_supply/technology", sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_UNKNOWN);
+    power_supply_state_->location = motor_nh.param< std::string >("power_supply/location", "");
+    power_supply_state_->serial_number =
+        motor_nh.param< std::string >("power_supply/serial_number", "");
+  }
 }
 
 //
@@ -498,13 +501,17 @@ void Epos::readJointState() {
 }
 
 void Epos::readPowerSupply() {
+  if (!power_supply_state_) {
+    return;
+  }
+
   const std::string device_name(getDeviceName(epos_handle_));
   if (device_name == "EPOS4") {
     boost::uint16_t voltage10x;
     VCS_OBJ(GetObject, epos_handle_, 0x2200, 0x01, &voltage10x, 2);
     // measured variables
-    power_supply_state_.voltage = voltage10x / 10.;
-    power_supply_state_.present = true;
+    power_supply_state_->voltage = voltage10x / 10.;
+    power_supply_state_->present = true;
   } else {
     ROS_WARN_STREAM_ONCE("Power supply voltage of " << motor_name_ << " cannot be measured because "
                                                     << device_name
@@ -512,17 +519,17 @@ void Epos::readPowerSupply() {
     // read something from the node to make sure power supply is present
     boost::uint16_t statusword;
     VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &statusword, 2);
-    power_supply_state_.voltage = std::numeric_limits< float >::quiet_NaN();
-    power_supply_state_.present = true;
+    power_supply_state_->voltage = std::numeric_limits< float >::quiet_NaN();
+    power_supply_state_->present = true;
   }
   // unmeasured variables
-  power_supply_state_.current = std::numeric_limits< float >::quiet_NaN();
-  power_supply_state_.charge = std::numeric_limits< float >::quiet_NaN();
-  power_supply_state_.capacity = std::numeric_limits< float >::quiet_NaN();
-  power_supply_state_.design_capacity = std::numeric_limits< float >::quiet_NaN();
-  power_supply_state_.percentage = std::numeric_limits< float >::quiet_NaN();
-  power_supply_state_.power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
-  power_supply_state_.power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
+  power_supply_state_->current = std::numeric_limits< float >::quiet_NaN();
+  power_supply_state_->charge = std::numeric_limits< float >::quiet_NaN();
+  power_supply_state_->capacity = std::numeric_limits< float >::quiet_NaN();
+  power_supply_state_->design_capacity = std::numeric_limits< float >::quiet_NaN();
+  power_supply_state_->percentage = std::numeric_limits< float >::quiet_NaN();
+  power_supply_state_->power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
+  power_supply_state_->power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
 }
 
 void Epos::readDiagnostic() {
