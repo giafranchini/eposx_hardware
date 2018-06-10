@@ -13,7 +13,35 @@ eposx_hardware
   * refactored codes including an useful C++ wrapper of backend C library
 
 # Node: epos_hardware_node
-will be described soon
+## Usage
+`rosrun eposx_hardware epos_hardware_node [motor_name...]`
+* [motor-specific parameters](#parameters) must be properly set
+
+## Parameters
+* all parameters below are motor-specific and must be in the namespace `~motor_name`
+
+`device` (string, default: "EPOS4")
+* type of device like "EPOS", "EPOS2", or "EPOS4"
+
+`protocol_stack` (string, default: "MAXON SERIAL V2")
+* type of protocol stack like "MAXON SERIAL V2", or "MAXON RS232"
+
+`interface` (string, default: "USB")
+* type of physical interface like "USB", "RS232", or "CANOpen"
+
+`port` (string, default: "")
+* path to physical port like "/dev/ttyUSB0"
+* if empty string, all possible port will be scanned
+
+`node_id` (int, default: 0)
+* EPOS's node id
+* if 0, all possible node indices will be tried
+
+`serial_number` (string, default: "")
+* EPOS's serial number in hex without "0x"
+* if empty string, `port` and/or `node_id` will be used to search the device
+
+remaining parameters wiil be described soon
 
 # Commandline tool: list_nodes
 will be described soon
