@@ -1,7 +1,7 @@
 eposx_hardware
 ============
 # eposx_hardware is ...
-* ROS interface for Maxon EPOS motor drivers
+* ROS interface for [Maxon EPOS motor drivers](https://www.maxonmotor.com/maxon/view/content/EPOS-Detailsite)
 * forked from [RIVeR-Lab/epos_hardware](https://github.com/RIVeR-Lab/epos_hardware), with a lot of enhancements and refactors
 * difference from the original package
   * supports all EPOS drivers (EPOS/EPOS2/EPOS4)
