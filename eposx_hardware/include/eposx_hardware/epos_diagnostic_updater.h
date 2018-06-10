@@ -16,30 +16,26 @@
 
 namespace eposx_hardware {
 
+struct EposDiagnosticData {
+  boost::int8_t operation_mode_display;
+  boost::uint16_t statusword;
+  std::vector< unsigned int > device_errors;
+};
+
 class EposDiagnosticHandle {
 public:
-  EposDiagnosticHandle()
-      : name_(), operation_mode_display_(NULL), statusword_(NULL), device_errors_(NULL) {}
-  EposDiagnosticHandle(const std::string &name, const boost::int8_t *const operation_mode_display,
-                       const boost::uint16_t *const statusword,
-                       const std::vector< unsigned int > *const device_errors)
-      : name_(name), operation_mode_display_(operation_mode_display), statusword_(statusword),
-        device_errors_(device_errors) {}
+  EposDiagnosticHandle() : name_(), data_(NULL) {}
+  EposDiagnosticHandle(const std::string &name, const EposDiagnosticData *data)
+      : name_(name), data_(data) {}
   virtual ~EposDiagnosticHandle() {}
 
   std::string getName() const { return name_; }
-  boost::int8_t getOperationModeDisplay() const { return *operation_mode_display_; }
-  const boost::int8_t *getOperationModeDisplayPtr() const { return operation_mode_display_; }
-  boost::uint16_t getStatusword() const { return *statusword_; }
-  const boost::uint16_t *getStatuswordPtr() const { return statusword_; }
-  std::vector< unsigned int > getDeviceErrors() const { return *device_errors_; }
-  const std::vector< unsigned int > *getDeviceErrorsPtr() const { return device_errors_; }
+  EposDiagnosticData getData() const { return *data_; }
+  const EposDiagnosticData *getDataPtr() { return data_; }
 
 private:
   std::string name_;
-  const boost::int8_t *operation_mode_display_;
-  const boost::uint16_t *statusword_;
-  const std::vector< unsigned int > *device_errors_;
+  const EposDiagnosticData *data_;
 };
 
 class EposDiagnosticInterface
@@ -68,9 +64,7 @@ private:
 
   const double *position_, *velocity_, *effort_;
   const double *position_cmd_, *velocity_cmd_, *effort_cmd_;
-  const boost::int8_t *operation_mode_display_;
-  const boost::uint16_t *statusword_;
-  const std::vector< unsigned int > *device_errors_;
+  const EposDiagnosticData *diagnostic_data_;
 };
 
 } // namespace eposx_hardware

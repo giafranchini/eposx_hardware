@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include <eposx_hardware/epos_diagnostic_updater.h>
 #include <eposx_hardware/epos_operation_mode.h>
 #include <eposx_hardware/utils.h>
 #include <hardware_interface/controller_info.h>
@@ -57,6 +58,7 @@ private:
 private:
   typedef boost::shared_ptr< EposOperationMode > OperationModePtr;
   typedef std::map< std::string, OperationModePtr > OperationModeMap;
+  typedef boost::shared_ptr< EposDiagnosticData > DiagnosticDataPtr;
 
   std::string motor_name_;
 
@@ -70,9 +72,7 @@ private:
   double effort_;
   double current_;
   sensor_msgs::BatteryStatePtr power_supply_state_;
-  boost::int8_t operation_mode_display_;
-  boost::uint16_t statusword_;
-  std::vector< unsigned int > device_errors_;
+  DiagnosticDataPtr diagnostic_data_;
 
   bool rw_ros_units_;
   double torque_constant_;

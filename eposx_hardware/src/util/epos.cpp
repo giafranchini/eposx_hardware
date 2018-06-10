@@ -77,9 +77,11 @@ void Epos::initHardwareInterface(hardware_interface::RobotHW &hw, ros::NodeHandl
       hw, hi::ActuatorStateHandle(motor_name_, &position_, &velocity_, &effort_));
 
   // register diagnostic handle
-  registerTo< EposDiagnosticInterface >(
-      hw,
-      EposDiagnosticHandle(motor_name_, &operation_mode_display_, &statusword_, &device_errors_));
+  if (motor_nh.param("detailed_diagnostic", false)) {
+    diagnostic_data_.reset(new EposDiagnosticData);
+    registerTo< EposDiagnosticInterface >(
+        hw, EposDiagnosticHandle(motor_name_, diagnostic_data_.get()));
+  }
 
   // if power_supply/name is given, additionally register power supply hardware
   std::string power_supply_name;
@@ -533,18 +535,22 @@ void Epos::readPowerSupply() {
 }
 
 void Epos::readDiagnostic() {
+  if (!diagnostic_data_) {
+    return;
+  }
+
   // read actual operation mode (this is common in all types of devices)
-  VCS_OBJ(GetObject, epos_handle_, 0x6061, 0x00, &operation_mode_display_, 1);
+  VCS_OBJ(GetObject, epos_handle_, 0x6061, 0x00, &diagnostic_data_->operation_mode_display, 1);
 
   // read statusword (this is common in all types of devices)
-  VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &statusword_, 2);
+  VCS_OBJ(GetObject, epos_handle_, 0x6041, 0x00, &diagnostic_data_->statusword, 2);
 
   // read fault info
   unsigned char num_device_errors;
   VCS_NN(GetNbOfDeviceError, epos_handle_, &num_device_errors);
-  device_errors_.resize(num_device_errors, 0);
+  diagnostic_data_->device_errors.resize(num_device_errors, 0);
   for (unsigned char i = 1; i <= num_device_errors; ++i) {
-    VCS_NN(GetDeviceErrorCode, epos_handle_, i, &device_errors_[i]);
+    VCS_NN(GetDeviceErrorCode, epos_handle_, i, &diagnostic_data_->device_errors[i]);
   }
 }
 

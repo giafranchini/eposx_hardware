@@ -83,13 +83,9 @@ void EposDiagnosticUpdater::init(hardware_interface::RobotHW &hw, ros::NodeHandl
   // try sniff diagnostic data
   EposDiagnosticHandle diagnostic_handle;
   if (getFrom< EposDiagnosticInterface >(hw, motor_name, diagnostic_handle)) {
-    operation_mode_display_ = diagnostic_handle.getOperationModeDisplayPtr();
-    statusword_ = diagnostic_handle.getStatuswordPtr();
-    device_errors_ = diagnostic_handle.getDeviceErrorsPtr();
+    diagnostic_data_ = diagnostic_handle.getDataPtr();
   } else {
-    operation_mode_display_ = NULL;
-    statusword_ = NULL;
-    device_errors_ = NULL;
+    diagnostic_data_ = NULL;
   }
 
   // units in states and commands
@@ -127,9 +123,10 @@ void EposDiagnosticUpdater::updateMotorDiagnostic(
     diagnostic_updater::DiagnosticStatusWrapper &stat) {
   stat.add("Motor Name", motor_name_);
 
-  if (statusword_) {
-    const bool enabled = STATUSWORD(READY_TO_SWITCH_ON, *statusword_) &&
-                         STATUSWORD(SWITCHED_ON, *statusword_) && STATUSWORD(ENABLE, *statusword_);
+  if (diagnostic_data_) {
+    const boost::uint16_t statusword(diagnostic_data_->statusword);
+    const bool enabled = STATUSWORD(READY_TO_SWITCH_ON, statusword) &&
+                         STATUSWORD(SWITCHED_ON, statusword) && STATUSWORD(ENABLE, statusword);
     if (enabled) {
       stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Enabled");
     } else {
@@ -137,29 +134,29 @@ void EposDiagnosticUpdater::updateMotorDiagnostic(
     }
 
     // Quickstop is enabled when bit is unset (only read quickstop when enabled)
-    if (!STATUSWORD(QUICKSTOP, *statusword_) && enabled) {
+    if (!STATUSWORD(QUICKSTOP, statusword) && enabled) {
       stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::WARN, "Quickstop");
     }
 
-    if (STATUSWORD(WARNING, *statusword_)) {
+    if (STATUSWORD(WARNING, statusword)) {
       stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::WARN, "Warning");
     }
 
-    if (STATUSWORD(FAULT, *statusword_)) {
+    if (STATUSWORD(FAULT, statusword)) {
       stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::ERROR, "Fault");
     }
 
-    stat.add< bool >("Enabled", STATUSWORD(ENABLE, *statusword_));
-    stat.add< bool >("Fault", STATUSWORD(FAULT, *statusword_));
-    stat.add< bool >("Voltage Enabled", STATUSWORD(VOLTAGE_ENABLED, *statusword_));
-    stat.add< bool >("Quickstop", STATUSWORD(QUICKSTOP, *statusword_));
-    stat.add< bool >("Warning", STATUSWORD(WARNING, *statusword_));
+    stat.add< bool >("Enabled", STATUSWORD(ENABLE, statusword));
+    stat.add< bool >("Fault", STATUSWORD(FAULT, statusword));
+    stat.add< bool >("Voltage Enabled", STATUSWORD(VOLTAGE_ENABLED, statusword));
+    stat.add< bool >("Quickstop", STATUSWORD(QUICKSTOP, statusword));
+    stat.add< bool >("Warning", STATUSWORD(WARNING, statusword));
   } else {
     stat.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "No status read");
   }
 
-  if (device_errors_) {
-    BOOST_FOREACH (const unsigned int &device_error, *device_errors_) {
+  if (diagnostic_data_) {
+    BOOST_FOREACH (const unsigned int &device_error, diagnostic_data_->device_errors) {
       std::ostringstream error_msg;
       error_msg << "EPOS Device Error: 0x" << std::hex << device_error;
       stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::ERROR, error_msg.str());
@@ -174,8 +171,8 @@ void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
   stat.add("Motor Name", motor_name_);
 
   // add stat of operation mode name
-  if (operation_mode_display_) {
-    switch (*operation_mode_display_) {
+  if (diagnostic_data_) {
+    switch (diagnostic_data_->operation_mode_display) {
     case -6:
       stat.add("Operation Mode", "Step/Direction");
       break;
@@ -211,8 +208,8 @@ void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
       break;
     default:
       stat.add("Operation Mode", "Unknown (" +
-                                     boost::lexical_cast< std::string >(
-                                         static_cast< int >(*operation_mode_display_)) +
+                                     boost::lexical_cast< std::string >(static_cast< int >(
+                                         diagnostic_data_->operation_mode_display)) +
                                      ")");
       break;
     }
@@ -258,14 +255,15 @@ void EposDiagnosticUpdater::updateMotorOutputDiagnostic(
   }
 
   // show status about motor operation
-  if (statusword_) {
-    if (STATUSWORD(CURRENT_LIMIT_ACTIVE, *statusword_)) {
+  if (diagnostic_data_) {
+    const boost::uint16_t statusword(diagnostic_data_->statusword);
+    if (STATUSWORD(CURRENT_LIMIT_ACTIVE, statusword)) {
       stat.summary(diagnostic_msgs::DiagnosticStatus::WARN, "Current Limit Active");
     } else {
       stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "Operating within current limit");
     }
-    stat.add< bool >("Target Reached", STATUSWORD(TARGET_REACHED, *statusword_));
-    stat.add< bool >("Current Limit Active", STATUSWORD(CURRENT_LIMIT_ACTIVE, *statusword_));
+    stat.add< bool >("Target Reached", STATUSWORD(TARGET_REACHED, statusword));
+    stat.add< bool >("Current Limit Active", STATUSWORD(CURRENT_LIMIT_ACTIVE, statusword));
   } else {
     stat.summary(diagnostic_msgs::DiagnosticStatus::ERROR, "No status read");
   }
