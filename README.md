@@ -41,6 +41,25 @@ eposx_hardware
 * EPOS's serial number in hex without "0x"
 * if empty string, `port` and/or `node_id` will be used to search the device
 
+`baudrate` (int, default: 0)
+* baudrate of communication via physical interface
+* if 0, keep current baudrate
+* ignored if another device belonging to the interface is already initialized
+
+`timeout` (int, default: 0)
+* timeout of communication via physical interface in ms
+* if 0, keep current timeout
+* ignored if another device belonging to the interface is already initialized
+
+`clear_faults` (bool, default: false)
+* clear faults recorded in the device on startup
+
+`rw_ros_units` (bool, default: false)
+* use ROS standard units (rad, rad/s, Nm) in hardware interfaces or EPOS standard units (quad count of encoder pulse(qc), rpm, mNm)
+
+`detailed_diagnostic` (bool, default: false)
+* additionally read actual operation mode, device status, and fault info
+
 remaining parameters wiil be described soon
 
 # Commandline tool: list_nodes
