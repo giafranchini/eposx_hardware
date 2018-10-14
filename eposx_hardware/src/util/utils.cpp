@@ -286,7 +286,7 @@ std::vector< NodeInfo > enumerateNodes(const DeviceInfo &device_info, const unsi
   std::vector< NodeInfo > possible_node_infos;
   BOOST_FOREACH (const DeviceInfo &possible_device_info, possible_device_infos) {
     if (node_id == 0) {
-      for (unsigned short possible_node_id = 1; possible_node_id < max_node_id;
+      for (unsigned short possible_node_id = 1; possible_node_id <= max_node_id;
            ++possible_node_id) {
         possible_node_infos.push_back(NodeInfo(possible_device_info, possible_node_id));
       }
