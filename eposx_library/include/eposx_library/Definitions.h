@@ -54,6 +54,15 @@
     Initialisation_DllExport int  VCS_CloseDevice(void* KeyHandle, unsigned int* pErrorCode);
     Initialisation_DllExport int  VCS_CloseAllDevices(unsigned int* pErrorCode);
 
+//Gateway
+    Initialisation_DllExport int VCS_SetGatewaySettings(void* KeyHandle, unsigned int Baudrate, unsigned int* pErrorCode);
+    Initialisation_DllExport int VCS_GetGatewaySettings(void* KeyHandle, unsigned int* pBaudrate, unsigned int* pErrorCode);
+
+//Sub device
+    Initialisation_DllExport void* VCS_OpenSubDevice(void* DeviceHandle, char* DeviceName, char* ProtocolStackName, unsigned int* pErrorCode);
+    Initialisation_DllExport int VCS_CloseSubDevice(void* KeyHandle, unsigned int* pErrorCode);
+    Initialisation_DllExport int VCS_CloseAllSubDevices(void* DeviceHandle, unsigned int* pErrorCode);
+
 //Info
     HelpFunctions_DllExport int  VCS_GetDriverInfo(char* p_pszLibraryName, unsigned short p_usMaxLibraryNameStrSize,char* p_pszLibraryVersion, unsigned short p_usMaxLibraryVersionStrSize, unsigned int* p_pErrorCode);
     HelpFunctions_DllExport int  VCS_GetVersion(void* KeyHandle, unsigned short NodeId, unsigned short* pHardwareVersion, unsigned short* pSoftwareVersion, unsigned short* pApplicationNumber, unsigned short* pApplicationVersion, unsigned int* pErrorCode);
