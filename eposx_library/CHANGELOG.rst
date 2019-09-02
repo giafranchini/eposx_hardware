@@ -2,6 +2,12 @@
 Changelog for package epos_library
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.4 (2019-09-02)
+------------------
+* Forked to yoshito-n-students
+* Updated epos command library to v12.2016
+* New contributors: Yoshito Okada
+
 0.0.3 (2015-06-18)
 ------------------
 
