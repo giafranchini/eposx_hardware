@@ -23,7 +23,7 @@ Epos::~Epos() {
   try {
     VCS_N0(SetDisableState, epos_handle_);
   } catch (const EposException &error) {
-    ROS_ERROR_STREAM(error.what());
+    ROS_ERROR_STREAM(motor_name_ << " (id=" << epos_handle_.node_id << "): " << error.what());
   }
 }
 
@@ -406,7 +406,8 @@ void Epos::initDeviceError(ros::NodeHandle &motor_nh) {
   for (int i = 1; i <= num_device_errors; ++i) {
     unsigned int device_error_code;
     VCS_NN(GetDeviceErrorCode, epos_handle_, i, &device_error_code);
-    ROS_WARN_STREAM("EPOS Device Error: 0x" << std::hex << device_error_code);
+    ROS_WARN_STREAM(motor_name_ << " (id=" << epos_handle_.node_id << "): "
+                                << "EPOS Device Error: 0x" << std::hex << device_error_code);
   }
 
   if (motor_nh.param("clear_faults", false)) {
@@ -456,7 +457,7 @@ void Epos::doSwitch(const std::list< hardware_interface::ControllerInfo > &start
       ROS_INFO_STREAM(motor_name_ << " switched to operation mode associated with "
                                   << mode_to_switch->first);
     } catch (const EposException &error) {
-      ROS_ERROR_STREAM(error.what());
+      ROS_ERROR_STREAM(motor_name_ << " (id=" << epos_handle_.node_id << "): " << error.what());
     }
   }
 }
@@ -474,7 +475,7 @@ void Epos::read() {
     readPowerSupply();
     readDiagnostic();
   } catch (const EposException &error) {
-    ROS_ERROR_STREAM(error.what());
+    ROS_ERROR_STREAM(motor_name_ << " (id=" << epos_handle_.node_id << "): " << error.what());
   }
 }
 
@@ -564,7 +565,7 @@ void Epos::write() {
       operation_mode_->write();
     }
   } catch (const EposException &error) {
-    ROS_ERROR_STREAM(error.what());
+    ROS_ERROR_STREAM(motor_name_ << " (id=" << epos_handle_.node_id << "): " << error.what());
   }
 }
 
