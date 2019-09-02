@@ -101,13 +101,13 @@ target_link_libraries(epos_hardware_node
 
 
 # Mark udev install program for installation
-install(PROGRAMS
-  install_udev_rules
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(FILES 99-ftdi.rules 99-epos4.rules
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION} # BIN ?
-)
+#install(PROGRAMS
+#  install_udev_rules
+#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
+#install(FILES 99-ftdi.rules 99-epos4.rules
+#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION} # BIN ?
+#)
 
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
