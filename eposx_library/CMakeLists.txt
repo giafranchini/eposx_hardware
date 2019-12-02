@@ -21,6 +21,9 @@ elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386"
        OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86/libEposCmd.so.6.5.1.0)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv6l") # RasPi1
+  set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v6/libftd2xx.so.1.4.8)
+  set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v6/libEposCmd.so.6.5.1.0)
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l") # RasPi2
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v7/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v7/libEposCmd.so.6.5.1.0)
