@@ -4,10 +4,10 @@ project(eposx_library)
 find_package(catkin REQUIRED)
 
 # find the 32 or 64 bit libraries
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(ARCH "x86_64")
+if(CMAKE_SYSTEM_PROCESSOR EQUAL "x86_64")
+  set(ARCH "intel/x86_64")
 else()
-  set(ARCH "x86")
+  set(ARCH "intel/x86")
 endif()
 message(STATUS "Detected architecture: ${ARCH}")
 
@@ -22,8 +22,22 @@ catkin_package(
 
 include_directories(include)
 
-set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/${ARCH}/libftd2xx.so.1.4.6)
-set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/${ARCH}/libEposCmd.so.6.4.1.0)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86_64/libftd2xx.so.1.4.8)
+  set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86_64/libEposCmd.so.6.5.1.0)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386"
+       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
+  set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86/libftd2xx.so.1.4.8)
+  set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86/libEposCmd.so.6.5.1.0)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l") # RasPi2
+  set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v7/libftd2xx.so.1.4.8)
+  set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v7/libEposCmd.so.6.5.1.0)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") # RasPi3, 4
+  set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v8/libftd2xx.so.1.4.8)
+  set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v8/libEposCmd.so.6.5.1.0)
+else()
+  message(FATAL_ERROR "Unsupported processor type: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
 
 add_library(ftd2xx SHARED ${ftd2xx_LIBRARY})
 add_custom_command(TARGET ftd2xx POST_BUILD COMMAND cp ${ftd2xx_LIBRARY} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libftd2xx.so)
