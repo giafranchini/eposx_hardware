@@ -3,14 +3,6 @@ project(eposx_library)
 
 find_package(catkin REQUIRED)
 
-# find the 32 or 64 bit libraries
-if(CMAKE_SYSTEM_PROCESSOR EQUAL "x86_64")
-  set(ARCH "intel/x86_64")
-else()
-  set(ARCH "intel/x86")
-endif()
-message(STATUS "Detected architecture: ${ARCH}")
-
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ftd2xx EposCmd
