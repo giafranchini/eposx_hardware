@@ -14,20 +14,24 @@ catkin_package(
 
 include_directories(include)
 
+# Processor classification is based on install.sh of the epos command library
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86_64/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86_64/libEposCmd.so.6.5.1.0)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "i386"
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86"
+       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i386"
+       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i486"
+       OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i586"
        OR CMAKE_SYSTEM_PROCESSOR STREQUAL "i686")
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/intel/x86/libEposCmd.so.6.5.1.0)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv6l") # RasPi1
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv6")
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v6/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v6/libEposCmd.so.6.5.1.0)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l") # RasPi2
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v7/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v7/libEposCmd.so.6.5.1.0)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") # RasPi3, 4
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   set(ftd2xx_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v8/libftd2xx.so.1.4.8)
   set(EposCmd_LIBRARY ${PROJECT_SOURCE_DIR}/lib/arm/v8/libEposCmd.so.6.5.1.0)
 else()
